@@ -44,7 +44,7 @@ template <typename T> T &Tensor<T>::at(std::initializer_list<size_t> index) {
   size_t i = 0;
 
   for (auto idx : index) {
-    offset += idx + i * strides[idx];
+    offset += idx * strides[i];
     i++;
   }
 
@@ -67,6 +67,8 @@ template <typename T> void Tensor<T>::dump_mat() {
 
     std::cout << "],\n";
   }
+
+  std::cout << "]\n";
 }
 
 template <typename T> Tensor<T> matmul(Tensor<T> &a, Tensor<T> &b) {
@@ -81,7 +83,7 @@ template <typename T> Tensor<T> matmul(Tensor<T> &a, Tensor<T> &b) {
     for (size_t j = 0; j < p; j++) {
       T sum = 0;
 
-      for (size_t k = 0; k < n; n++) {
+      for (size_t k = 0; k < n; k++) {
         sum += a.at({i, k}) * b.at({k, j});
       }
 
