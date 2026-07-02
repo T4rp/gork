@@ -1,4 +1,4 @@
-#include "gork/tensor.h"
+#include "gork/tensor.hh"
 #include <iostream>
 #include <random>
 #include <vector>
