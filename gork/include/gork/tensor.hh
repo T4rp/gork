@@ -94,6 +94,20 @@ template <typename T> Tensor<T> matmul(Tensor<T> &a, Tensor<T> &b) {
   return out;
 }
 
+template <typename T> void transposeMat(Tensor<T> &mat) {
+  size_t shapeTemp{0};
+  size_t strideTemp{0};
+
+  shapeTemp = mat.shape[0];
+  strideTemp = mat.strides[0];
+
+  mat.shape[0] = mat.shape[1];
+  mat.shape[1] = shapeTemp;
+
+  mat.strides[0] = mat.strides[1];
+  mat.strides[1] = strideTemp;
+}
+
 } // namespace gork
 
 #endif
