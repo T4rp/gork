@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <initializer_list>
 #include <iostream>
+#include <optional>
 #include <vector>
 
 namespace gork {
@@ -129,6 +130,22 @@ template <typename T> Tensor<T> broadcastAdd(Tensor<T> &mat, Tensor<T> &vec) {
   }
 
   return tensor;
+}
+
+template <typename T> Tensor<T> broadcastReLU(Tensor<T> &tensor) {
+  Tensor<T> newTensor = tensor;
+
+  for (size_t i = 0; i < newTensor.data.size(); i++) {
+    T out{0.0};
+
+    if (newTensor.data[i] > 0) {
+      out = newTensor.data[i];
+    }
+
+    newTensor.data[i] = out;
+  }
+
+  return newTensor;
 }
 
 } // namespace gork
