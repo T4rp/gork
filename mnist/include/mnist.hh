@@ -18,7 +18,7 @@ class LabelsDb {
     uint8_t get_label(size_t n) const;
 };
 
-struct ImagesDb {
+class ImagesDb {
   private:
     std::vector<uint8_t> data;
 
@@ -33,5 +33,5 @@ struct ImagesDb {
 };
 
 } // namespace mnist
-  //
+
 #endif

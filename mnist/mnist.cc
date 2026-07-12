@@ -1,6 +1,7 @@
-#include "mnist.hh"
 #include <cstdint>
 #include <vector>
+
+#include "mnist.hh"
 
 namespace {
 

@@ -1,16 +1,14 @@
-#include "mnist.hh"
-#include <complex>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
-#include <fstream>
-#include <ios>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>
 #include <zlib.h>
+
+#include "mnist.hh"
 
 std::vector<uint8_t> ungzFile(std::string_view path) {
     std::vector<uint8_t> unzipped{};
