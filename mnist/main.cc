@@ -52,8 +52,8 @@ int main() {
 
     std::cout << "decompressing done\n";
 
-    mnist::LabelsDb labels{labelsData};
-    mnist::ImagesDb images{imagesData};
+    mnist::LabelsDb labels{std::move(labelsData)};
+    mnist::ImagesDb images{std::move(imagesData)};
 
     for (size_t i = 0; i < 10; i++) {
         std::cout << std::to_string(labels.get_label(i));
