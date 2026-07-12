@@ -4,3 +4,4 @@ project(Gork)
 
 add_subdirectory(gork)
 add_subdirectory(testing)
+add_subdirectory(mnist)
