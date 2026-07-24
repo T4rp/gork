@@ -5,7 +5,6 @@
 #include <cstddef>
 #include <initializer_list>
 #include <iostream>
-#include <optional>
 #include <vector>
 
 namespace gork {
