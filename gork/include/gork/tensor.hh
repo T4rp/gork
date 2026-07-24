@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <initializer_list>
 #include <iostream>
+#include <optional>
 #include <vector>
 
 namespace gork {
@@ -16,6 +17,9 @@ class Tensor {
     std::vector<size_t> shape;
     std::vector<size_t> strides;
 
+    std::optional<Tensor<T>*> grad;
+    std::optional<void (*)(Tensor<T> &lhs, Tensor<T> &rhs)> backward;
+
     Tensor(const std::vector<size_t> &tensor_shape);
     T &at(std::initializer_list<size_t> index);
     Tensor<T> clone();
@@ -24,7 +28,8 @@ class Tensor {
 };
 
 template <typename T>
-Tensor<T>::Tensor(const std::vector<size_t> &tensor_shape) : shape(tensor_shape) {
+Tensor<T>::Tensor(const std::vector<size_t> &tensor_shape)
+    : shape(tensor_shape), grad{}, backward{} {
     size_t data_size = 1;
     for (auto dim : shape) {
         data_size *= dim;
@@ -99,22 +104,26 @@ Tensor<T> matmul(Tensor<T> &a, Tensor<T> &b) {
         }
     }
 
+    out.backward = [](Tensor<T> &rhs, Tensor<T> &lhs) { std::cout << "todo"; };
+
     return out;
 }
 
 template <typename T>
-void transposeMat(Tensor<T> &mat) {
-    size_t shapeTemp{0};
-    size_t strideTemp{0};
+Tensor<T> transposeMat(Tensor<T> &mat) {
+    size_t m = mat.shape[1];
+    size_t n = mat.shape[0];
 
-    shapeTemp = mat.shape[0];
-    strideTemp = mat.strides[0];
+    std::vector<size_t> outTensorShape{m, n};
+    Tensor<T> outTensor{outTensor};
 
-    mat.shape[0] = mat.shape[1];
-    mat.shape[1] = shapeTemp;
+    for (size_t i = 0; i < m; i++) {
+        for (size_t j = 0; j < n; j++) {
+            outTensor.at({j, i}) = mat.at({i, j});
+        }
+    }
 
-    mat.strides[0] = mat.strides[1];
-    mat.strides[1] = strideTemp;
+    return outTensor;
 }
 
 template <typename T>
@@ -133,6 +142,8 @@ Tensor<T> broadcastAdd(Tensor<T> &mat, Tensor<T> &vec) {
         }
     }
 
+    tensor.backward = [](Tensor<T> &rhs, Tensor<T> &lhs) { std::cout << "todo"; };
+
     return tensor;
 }
 
@@ -149,6 +160,8 @@ Tensor<T> broadcastReLU(Tensor<T> &tensor) {
 
         newTensor.data[i] = out;
     }
+
+    newTensor.backward = [](Tensor<T> &rhs, Tensor<T> &lhs) { std::cout << "todo"; };
 
     return newTensor;
 }
