@@ -12,24 +12,24 @@ using NodeId = size_t;
 template <typename T>
 class Node {
   public:
-    TensorOp op;
+    TensorOp op_;
 
-    Tensor<T> tensor;
-    Tensor<T> gradient;
+    Tensor<T> tensor_;
+    Tensor<T> gradient_;
 
-    std::vector<NodeId> inputs;
+    std::vector<NodeId> inputs_;
 
-    Node(Tensor<T> tensor_, TensorOp op_) : op{op_}, tensor{std::move(tensor_)} {}
+    Node(Tensor<T> tensor, TensorOp op) : op_{op}, tensor_{std::move(tensor)} {}
 };
 
 template <typename T>
 class Graph {
   public:
-    std::vector<Node<T>> nodes;
+    std::vector<Node<T>> nodes_;
 
     NodeId &addInput(Tensor<T> &&tensor) {
-        nodes.emplace_back({std::move(tensor), TensorOp::Input});
-        return nodes.size() - 1;
+        nodes_.emplace_back({std::move(tensor), TensorOp::Input});
+        return nodes_.size() - 1;
     }
 };
 

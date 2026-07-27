@@ -21,9 +21,9 @@ int main() {
     gork::Tensor<float> outputBias{outputBiasShape};
 
     gork::Tensor<float> a = gork::matmul(input, layer1Weights);
-    gork::Tensor<float> b = gork::broadcastAdd(a, layer1Bias);
+    gork::Tensor<float> b = gork::broadcast_add(a, layer1Bias);
     gork::Tensor<float> c = gork::matmul(b, outputWeights);
-    gork::Tensor<float> d = gork::broadcastAdd(c, outputBias);
+    gork::Tensor<float> d = gork::broadcast_add(c, outputBias);
 
     d.dump_mat();
 

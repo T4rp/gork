@@ -8,11 +8,11 @@ namespace mnist {
 
 class LabelsDb {
   private:
-    std::vector<uint8_t> data;
+    std::vector<uint8_t> data_;
 
   public:
-    uint32_t count;
-    uint8_t *label_data;
+    uint32_t count_;
+    uint8_t *labelData_;
 
     LabelsDb(std::vector<uint8_t> fileData);
     uint8_t get_label(size_t n) const;
@@ -20,13 +20,13 @@ class LabelsDb {
 
 class ImagesDb {
   private:
-    std::vector<uint8_t> data;
+    std::vector<uint8_t> data_;
 
   public:
-    uint32_t count;
-    uint32_t rows;
-    uint32_t columns;
-    uint8_t *image_data;
+    uint32_t count_;
+    uint32_t rows_;
+    uint32_t columns_;
+    uint8_t *imageData_;
 
     ImagesDb(std::vector<uint8_t> fileData);
     const uint8_t *get_image(size_t n) const;

@@ -12,9 +12,9 @@ namespace gork {
 template <typename T>
 class Tensor {
   public:
-    std::vector<T> data;
-    std::vector<size_t> shape;
-    std::vector<size_t> strides;
+    std::vector<T> data_;
+    std::vector<size_t> shape_;
+    std::vector<size_t> strides_;
 
     Tensor(const std::vector<size_t> &tensor_shape);
     T &at(std::initializer_list<size_t> index);
@@ -24,41 +24,41 @@ class Tensor {
 };
 
 template <typename T>
-Tensor<T>::Tensor(const std::vector<size_t> &tensor_shape) : shape(tensor_shape) {
+Tensor<T>::Tensor(const std::vector<size_t> &shape) : shape_(shape) {
     size_t data_size = 1;
     for (auto dim : shape) {
         data_size *= dim;
     }
 
-    data.resize(data_size);
-    strides.resize(shape.size());
+    data_.resize(data_size);
+    strides_.resize(shape.size());
 
     size_t stride = 1;
     for (size_t i = shape.size(); i-- > 0;) {
-        strides[i] = stride;
+        strides_[i] = stride;
         stride *= shape[i];
     }
 }
 
 template <typename T>
 T &Tensor<T>::at(std::initializer_list<size_t> index) {
-    assert(index.size() == shape.size());
+    assert(index.size() == shape_.size());
 
     size_t offset = 0;
     size_t i = 0;
 
     for (auto idx : index) {
-        offset += idx * strides[i];
+        offset += idx * strides_[i];
         i++;
     }
 
-    return data[offset];
+    return data_[offset];
 }
 
 template <typename T>
 void Tensor<T>::dump_mat() {
-    size_t m = shape[0];
-    size_t n = shape[1];
+    size_t m = shape_[0];
+    size_t n = shape_[1];
 
     std::cout << "[\n";
 
