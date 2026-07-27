@@ -5,7 +5,6 @@
 #include <cstddef>
 #include <initializer_list>
 #include <iostream>
-#include <optional>
 #include <vector>
 
 namespace gork {
@@ -25,8 +24,7 @@ class Tensor {
 };
 
 template <typename T>
-Tensor<T>::Tensor(const std::vector<size_t> &tensor_shape)
-    : shape(tensor_shape) {
+Tensor<T>::Tensor(const std::vector<size_t> &tensor_shape) : shape(tensor_shape) {
     size_t data_size = 1;
     for (auto dim : shape) {
         data_size *= dim;
@@ -67,12 +65,14 @@ void Tensor<T>::dump_mat() {
     for (size_t i = 0; i < m; i++) {
         std::cout << "\t[";
 
-        for (size_t j = 0; j < n; j++) {
+        for (size_t j = 0; j < (n - 1); j++) {
             T val = at({i, j});
             std::cout << val << ", ";
         }
 
-        std::cout << "],\n";
+        T val = at({i, n - 1});
+
+        std::cout << val << "],\n";
     }
 
     std::cout << "]\n";

@@ -19,13 +19,18 @@ class Node {
 
     std::vector<NodeId> inputs;
 
-    Node() : op{TensorOp::NoOp} {}
+    Node(Tensor<T> tensor_, TensorOp op_) : op{op_}, tensor{std::move(tensor_)} {}
 };
 
 template <typename T>
 class Graph {
   public:
     std::vector<Node<T>> nodes;
+
+    NodeId &addInput(Tensor<T> &&tensor) {
+        nodes.emplace_back({std::move(tensor), TensorOp::Input});
+        return nodes.size() - 1;
+    }
 };
 
 } // namespace gork
