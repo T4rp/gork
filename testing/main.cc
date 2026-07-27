@@ -1,6 +1,9 @@
-#include "gork/tensor.hh"
 #include <iostream>
+#include <random>
 #include <vector>
+
+#include "gork/tensor.hh"
+#include "gork/ops.hh"
 
 int main() {
     std::vector<size_t> inputShape{1, 2};
