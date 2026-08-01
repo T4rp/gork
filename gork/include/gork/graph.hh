@@ -27,6 +27,8 @@ class Graph {
   public:
     std::vector<Node<T>> nodes_;
 
+    Graph() {}
+
     NodeId &addInput(Tensor<T> &&tensor) {
         nodes_.emplace_back({std::move(tensor), TensorOp::Input});
         return nodes_.size() - 1;
