@@ -22,10 +22,15 @@ class Node {
     std::vector<NodeId> inputs_;
 
     Node(Tensor<T> tensor, TensorOp op);
+    Node(Tensor<T> tensor, TensorOp op, std::vector<NodeId> inputs);
 };
 
 template <typename T>
 Node<T>::Node(Tensor<T> tensor, TensorOp op) : tensor_{std::move(tensor)}, op_{op} {}
+
+template <typename T>
+Node<T>::Node(Tensor<T> tensor, TensorOp op, std::vector<NodeId> inputs)
+    : tensor_{std::move(tensor)}, op_{op}, inputs_{std::move(inputs)} {}
 
 template <typename T>
 class Graph {
@@ -55,7 +60,7 @@ NodeId Graph<T>::matmul(NodeId rhs, NodeId lhs) {
     Node<T> &leftNode = nodes_[lhs];
 
     Tensor<T> result{std::vector{leftNode.tensor_.shape_[1], rightNode.tensor_.shape_[0]}};
-    nodes_.emplace_back(std::move(result), TensorOp::Matmul);
+    nodes_.emplace_back(std::move(result), TensorOp::Matmul, std::vector<gork::NodeId>{rhs, lhs});
 
     return nodes_.size() - 1;
 }
