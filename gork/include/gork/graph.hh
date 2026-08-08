@@ -25,7 +25,7 @@ class Node {
 };
 
 template <typename T>
-Node<T>::Node(Tensor<T> tensor, TensorOp op) : tensor_{std::move(tensor)}, op_{op}  {}
+Node<T>::Node(Tensor<T> tensor, TensorOp op) : tensor_{std::move(tensor)}, op_{op} {}
 
 template <typename T>
 class Graph {
@@ -46,10 +46,10 @@ NodeId Graph<T>::addInput(Tensor<T> &&tensor) {
 
 template <typename T>
 NodeId Graph<T>::matmul(NodeId rhs, NodeId lhs) {
-    Tensor<T> &rightNode = nodes_[rhs];
-    Tensor<T> &leftNode = nodes_[lhs];
+    Node<T> &rightNode = nodes_[rhs];
+    Node<T> &leftNode = nodes_[lhs];
 
-    Tensor<T> result{std::vector{rightNode.shape_[1], leftNode.shape_[0]}};
+    Tensor<T> result{std::vector{leftNode.tensor_.shape_[1], rightNode.tensor_.shape_[0]}};
     nodes_.emplace_back(std::move(result), TensorOp::Matmul);
 
     return nodes_.size() - 1;
