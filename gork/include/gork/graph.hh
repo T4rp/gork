@@ -17,7 +17,7 @@ class Node {
     TensorOp op_;
 
     Tensor<T> tensor_;
-    std::optional<NodeId> gradient_;
+    std::optional<Tensor<T>> gradient_;
 
     std::vector<NodeId> inputs_;
 
