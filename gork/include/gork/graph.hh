@@ -3,6 +3,8 @@
 
 #include "gork/ops.hh"
 #include "gork/tensor.hh"
+#include <algorithm>
+#include <optional>
 #include <vector>
 
 namespace gork {
@@ -15,12 +17,15 @@ class Node {
     TensorOp op_;
 
     Tensor<T> tensor_;
-    Tensor<T> gradient_;
+    std::optional<NodeId> gradient_;
 
     std::vector<NodeId> inputs_;
 
-    Node(Tensor<T> tensor, TensorOp op) : op_{op}, tensor_{std::move(tensor)} {}
+    Node(Tensor<T> tensor, TensorOp op);
 };
+
+template <typename T>
+Node<T>::Node(Tensor<T> tensor, TensorOp op) : tensor_{std::move(tensor)}, op_{op}  {}
 
 template <typename T>
 class Graph {
@@ -29,11 +34,26 @@ class Graph {
 
     Graph() {}
 
-    NodeId &addInput(Tensor<T> &&tensor) {
-        nodes_.emplace_back({std::move(tensor), TensorOp::Input});
-        return nodes_.size() - 1;
-    }
+    NodeId addInput(Tensor<T> &&tensor);
+    NodeId matmul(NodeId rhs, NodeId lhs);
 };
+
+template <typename T>
+NodeId Graph<T>::addInput(Tensor<T> &&tensor) {
+    nodes_.emplace_back(std::move(tensor), TensorOp::Input);
+    return nodes_.size() - 1;
+}
+
+template <typename T>
+NodeId Graph<T>::matmul(NodeId rhs, NodeId lhs) {
+    Tensor<T> &rightNode = nodes_[rhs];
+    Tensor<T> &leftNode = nodes_[lhs];
+
+    Tensor<T> result{std::vector{rightNode.shape_[1], leftNode.shape_[0]}};
+    nodes_.emplace_back(std::move(result), TensorOp::Matmul);
+
+    return nodes_.size() - 1;
+}
 
 } // namespace gork
 
