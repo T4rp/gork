@@ -29,13 +29,18 @@ Node<T>::Node(Tensor<T> tensor, TensorOp op) : tensor_{std::move(tensor)}, op_{o
 
 template <typename T>
 class Graph {
-  public:
+  private:
     std::vector<Node<T>> nodes_;
 
+  public:
     Graph() {}
 
     NodeId addInput(Tensor<T> &&tensor);
     NodeId matmul(NodeId rhs, NodeId lhs);
+
+#ifdef GORK_TESTING
+    const std::vector<Node<T>> &testNodes() const;
+#endif
 };
 
 template <typename T>
@@ -54,6 +59,13 @@ NodeId Graph<T>::matmul(NodeId rhs, NodeId lhs) {
 
     return nodes_.size() - 1;
 }
+
+#ifdef GORK_TESTING
+template <typename T>
+const std::vector<Node<T>> &Graph<T>::testNodes() const {
+    return nodes_;
+}
+#endif
 
 } // namespace gork
 

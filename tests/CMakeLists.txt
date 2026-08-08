@@ -11,3 +11,5 @@ target_link_libraries(tests
     gork
 )
 
+target_compile_definitions(tests PRIVATE GORK_TESTING)
+
