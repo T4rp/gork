@@ -18,10 +18,22 @@ TEST_CASE("Nodes can be inserted", "[graph]") {
 TEST_CASE("Nodes can be multiplied", "[graph]") {
     gork::Graph<float> graph{};
 
-    gork::NodeId node1 = graph.addInput(gork::Tensor<float>{std::vector<size_t>{4, 4}});
-    gork::NodeId node2 = graph.addInput(gork::Tensor<float>{std::vector<size_t>{4, 3}});
+    gork::NodeId node1 = graph.addTensor(gork::Tensor<float>{std::vector<size_t>{4, 4}});
+    gork::NodeId node2 = graph.addTensor(gork::Tensor<float>{std::vector<size_t>{4, 3}});
 
     graph.matmul(node1, node2);
+
+    REQUIRE(graph.testNodes().size() == 3);
+}
+
+
+TEST_CASE("Nodes can be added", "[graph]") {
+    gork::Graph<float> graph{};
+
+    gork::NodeId node1 = graph.addTensor(gork::Tensor<float>{std::vector<size_t>{4, 4}});
+    gork::NodeId node2 = graph.addTensor(gork::Tensor<float>{std::vector<size_t>{4, 4}});
+
+    graph.add(node1, node2);
 
     REQUIRE(graph.testNodes().size() == 3);
 }

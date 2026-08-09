@@ -41,7 +41,9 @@ class Graph {
     Graph() {}
 
     NodeId addInput(Tensor<T> &&tensor);
+    NodeId addTensor(Tensor<T> &&tensor);
     NodeId matmul(NodeId rhs, NodeId lhs);
+    NodeId add(NodeId rhs, NodeId lhs);
 
 #ifdef GORK_TESTING
     const std::vector<Node<T>> &testNodes() const;
@@ -55,12 +57,28 @@ NodeId Graph<T>::addInput(Tensor<T> &&tensor) {
 }
 
 template <typename T>
-NodeId Graph<T>::matmul(NodeId rhs, NodeId lhs) {
+NodeId Graph<T>::addTensor(Tensor<T> &&tensor) {
+    nodes_.emplace_back(std::move(tensor), TensorOp::NoOp);
+    return nodes_.size() - 1;
+}
+
+template <typename T>
+NodeId Graph<T>::matmul(NodeId lhs, NodeId rhs) {
     Node<T> &rightNode = nodes_[rhs];
     Node<T> &leftNode = nodes_[lhs];
 
     Tensor<T> result{std::vector{leftNode.tensor_.shape_[1], rightNode.tensor_.shape_[0]}};
-    nodes_.emplace_back(std::move(result), TensorOp::Matmul, std::vector<gork::NodeId>{rhs, lhs});
+    nodes_.emplace_back(std::move(result), TensorOp::Matmul, std::vector<NodeId>{lhs, rhs});
+
+    return nodes_.size() - 1;
+}
+
+template <typename T>
+NodeId Graph<T>::add(NodeId lhs, NodeId rhs) {
+    Node<T> &leftNode = nodes_[lhs];
+
+    Tensor<T> result{std::vector{leftNode.tensor_.shape_[0], leftNode.tensor_.shape_[1]}};
+    nodes_.emplace_back(std::move(result), TensorOp::Add, std::vector<NodeId>{lhs, rhs});
 
     return nodes_.size() - 1;
 }
