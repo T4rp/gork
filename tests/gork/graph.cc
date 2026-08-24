@@ -60,11 +60,29 @@ TEST_CASE("Nodes can be computed", "[graph]") {
 TEST_CASE("Matmul should compute", "[graph]") {
     gork::Graph<float> graph{};
 
-    gork::NodeId node1 = graph.addTensor(gork::Tensor<float>{std::vector<size_t>{3, 4}});
-    gork::NodeId node2 = graph.addTensor(gork::Tensor<float>{std::vector<size_t>{4, 5}});
+    gork::Tensor<float> tensor1{std::vector<size_t>{3, 4}};
+    gork::Tensor<float> tensor2{std::vector<size_t>{4, 5}};
+
+    tensor1.at({0, 0}) = 1;
+    tensor1.at({1, 1}) = 2;
+    tensor1.at({0, 2}) = 2;
+    tensor1.at({2, 3}) = 4;
+
+    tensor2.at({0, 0}) = 1;
+    tensor2.at({1, 1}) = 1;
+    tensor2.at({2, 2}) = 1;
+    tensor2.at({1, 0}) = 2;
+    tensor2.at({2, 0}) = 2;
+    tensor2.at({0, 3}) = 4;
+
+    gork::NodeId node1 = graph.addTensor(std::move(tensor1));
+    gork::NodeId node2 = graph.addTensor(std::move(tensor2));
 
     auto node3 = graph.matmul(node1, node2);
     gork::Tensor<float> &result = graph.compute(node3);
+
+    result.dump_mat();
+
     REQUIRE(result.shape_[0] == 3);
     REQUIRE(result.shape_[1] == 5);
 }

@@ -129,23 +129,23 @@ Tensor<T> &Graph<T>::compute(NodeId toCompute) {
 
     for (size_t i = dependencies.size(); i--;) {
         NodeId nodeId = dependencies[i];
-        Node<T> node = get(nodeId);
+        Node<T> &node = get(nodeId);
         switch (node.op_) {
         case TensorOp::Matmul: {
-            Node<T> child0 = get(node.inputs_[0]);
-            Node<T> child1 = get(node.inputs_[1]);
+            Node<T> &child0 = get(node.inputs_[0]);
+            Node<T> &child1 = get(node.inputs_[1]);
             node.tensor_ = gork::matmul(child0.tensor_, child1.tensor_);
             break;
         }
         case TensorOp::Add: {
-            Node<T> child0 = get(node.inputs_[0]);
-            Node<T> child1 = get(node.inputs_[1]);
+            Node<T> &child0 = get(node.inputs_[0]);
+            Node<T> &child1 = get(node.inputs_[1]);
             node.tensor_ = gork::add(child0.tensor_, child1.tensor_);
             break;
         }
         case TensorOp::BroadcastAdd: {
-            Node<T> child0 = get(node.inputs_[0]);
-            Node<T> child1 = get(node.inputs_[1]);
+            Node<T> &child0 = get(node.inputs_[0]);
+            Node<T> &child1 = get(node.inputs_[1]);
             node.tensor_ = gork::broadcast_add(child0.tensor_, child1.tensor_);
             break;
         }
