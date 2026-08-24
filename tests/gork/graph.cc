@@ -118,7 +118,6 @@ TEST_CASE("Add should compute", "[graph]") {
     REQUIRE(result.at({1, 1}) == 8);
 }
 
-
 TEST_CASE("BroadcastAdd should compute", "[graph]") {
     gork::Graph<float> graph{};
 
@@ -143,4 +142,25 @@ TEST_CASE("BroadcastAdd should compute", "[graph]") {
     REQUIRE(result.at({1, 0}) == 8);
     REQUIRE(result.at({0, 1}) == 4);
     REQUIRE(result.at({1, 1}) == 12);
+}
+
+TEST_CASE("Relu should compute", "[graph]") {
+    gork::Graph<float> graph{};
+
+    gork::Tensor<float> tensor1{std::vector<size_t>{2, 3}};
+
+    tensor1.at({0, 0}) = 6;
+    tensor1.at({1, 0}) = 7;
+    tensor1.at({0, 1}) = -6;
+    tensor1.at({1, 1}) = -7;
+
+    gork::NodeId node1 = graph.addTensor(std::move(tensor1));
+
+    auto node2 = graph.relu(node1);
+    gork::Tensor<float> &result = graph.compute(node2);
+
+    REQUIRE(result.at({0, 0}) == 6);
+    REQUIRE(result.at({1, 0}) == 7);
+    REQUIRE(result.at({0, 1}) == 0);
+    REQUIRE(result.at({1, 1}) == 0);
 }

@@ -12,6 +12,7 @@ enum class TensorOp {
     Matmul,
     Add,
     BroadcastAdd,
+    Relu,
 };
 
 template <typename T>
@@ -103,7 +104,7 @@ Tensor<T> broadcast_relu(Tensor<T> &tensor) {
     for (size_t i = 0; i < newTensor.data_.size(); i++) {
         T out{0.0};
 
-        if (newTensor.data[i] > 0) {
+        if (newTensor.data_[i] > 0) {
             out = newTensor.data_[i];
         }
 

@@ -44,9 +44,10 @@ class Graph {
     NodeId addInput(Tensor<T> &&tensor);
     NodeId addTensor(Tensor<T> &&tensor);
 
-    NodeId matmul(NodeId rhs, NodeId lhs);
-    NodeId broadcastAdd(NodeId rhs, NodeId lhs);
-    NodeId add(NodeId rhs, NodeId lhs);
+    NodeId matmul(NodeId lhs, NodeId rhs);
+    NodeId broadcastAdd(NodeId lhs, NodeId rhs);
+    NodeId add(NodeId lhs, NodeId rhs);
+    NodeId relu(NodeId tensor);
 
     Node<T> &get(NodeId id);
     Tensor<T> &compute(NodeId toCompute);
@@ -101,6 +102,16 @@ NodeId Graph<T>::add(NodeId lhs, NodeId rhs) {
 }
 
 template <typename T>
+NodeId Graph<T>::relu(NodeId nodeId) {
+    Node<T> &node = nodes_[nodeId];
+
+    Tensor<T> result{std::vector{node.tensor_.shape_[0], node.tensor_.shape_[1]}};
+    nodes_.emplace_back(std::move(result), TensorOp::Relu, std::vector<NodeId>{nodeId});
+
+    return nodes_.size() - 1;
+};
+
+template <typename T>
 Node<T> &Graph<T>::get(NodeId id) {
     return nodes_[id];
 }
@@ -147,6 +158,11 @@ Tensor<T> &Graph<T>::compute(NodeId toCompute) {
             Node<T> &child0 = get(node.inputs_[0]);
             Node<T> &child1 = get(node.inputs_[1]);
             node.tensor_ = gork::broadcast_add(child0.tensor_, child1.tensor_);
+            break;
+        }
+        case TensorOp::Relu: {
+            Node<T> &child0 = get(node.inputs_[0]);
+            node.tensor_ = gork::broadcast_relu(child0.tensor_);
             break;
         }
         }
