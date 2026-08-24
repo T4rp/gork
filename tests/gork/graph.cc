@@ -68,8 +68,6 @@ TEST_CASE("Matmul should compute", "[graph]") {
     tensor1.at({0, 2}) = 2;
     tensor1.at({2, 3}) = 4;
 
-    tensor2.at({0, 0}) = 1;
-    tensor2.at({1, 1}) = 1;
     tensor2.at({2, 2}) = 1;
     tensor2.at({1, 0}) = 2;
     tensor2.at({2, 0}) = 2;
@@ -85,4 +83,32 @@ TEST_CASE("Matmul should compute", "[graph]") {
 
     REQUIRE(result.shape_[0] == 3);
     REQUIRE(result.shape_[1] == 5);
+}
+
+TEST_CASE("Add should compute", "[graph]") {
+    gork::Graph<float> graph{};
+
+    gork::Tensor<float> tensor1{std::vector<size_t>{2, 2}};
+    gork::Tensor<float> tensor2{std::vector<size_t>{2, 2}};
+
+    tensor1.at({0, 0}) = 1;
+    tensor1.at({1, 0}) = 3;
+    tensor1.at({0, 1}) = 3;
+    tensor1.at({1, 1}) = 7;
+
+    tensor2.at({0, 0}) = 0;
+    tensor2.at({1, 0}) = 3;
+    tensor2.at({0, 1}) = 5;
+    tensor2.at({1, 1}) = 1;
+
+    gork::NodeId node1 = graph.addTensor(std::move(tensor1));
+    gork::NodeId node2 = graph.addTensor(std::move(tensor2));
+
+    auto node3 = graph.add(node1, node2);
+    gork::Tensor<float> &result = graph.compute(node3);
+
+    REQUIRE(result.at({0, 0}) == 1);
+    REQUIRE(result.at({1, 0}) == 6);
+    REQUIRE(result.at({0, 1}) == 8);
+    REQUIRE(result.at({1, 1}) == 8);
 }
