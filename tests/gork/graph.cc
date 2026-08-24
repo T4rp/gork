@@ -26,7 +26,6 @@ TEST_CASE("Nodes can be multiplied", "[graph]") {
     REQUIRE(graph.testNodes().size() == 3);
 }
 
-
 TEST_CASE("Nodes can be added", "[graph]") {
     gork::Graph<float> graph{};
 
@@ -36,4 +35,36 @@ TEST_CASE("Nodes can be added", "[graph]") {
     graph.add(node1, node2);
 
     REQUIRE(graph.testNodes().size() == 3);
+}
+
+TEST_CASE("Nodes can be retrieved", "[graph]") {
+    gork::Graph<float> graph{};
+
+    gork::NodeId node1 = graph.addTensor(gork::Tensor<float>{std::vector<size_t>{4, 2}});
+    gork::Node<float> &node = graph.get(node1);
+
+    REQUIRE(node.tensor_.shape_[0] == 4);
+    REQUIRE(node.tensor_.shape_[1] == 2);
+}
+
+TEST_CASE("Nodes can be computed", "[graph]") {
+    gork::Graph<float> graph{};
+
+    gork::NodeId node1 = graph.addTensor(gork::Tensor<float>{std::vector<size_t>{4, 4}});
+    gork::NodeId node2 = graph.addTensor(gork::Tensor<float>{std::vector<size_t>{4, 4}});
+
+    auto node3 = graph.add(node1, node2);
+    graph.compute(node3);
+}
+
+TEST_CASE("Matmul should compute", "[graph]") {
+    gork::Graph<float> graph{};
+
+    gork::NodeId node1 = graph.addTensor(gork::Tensor<float>{std::vector<size_t>{3, 4}});
+    gork::NodeId node2 = graph.addTensor(gork::Tensor<float>{std::vector<size_t>{4, 5}});
+
+    auto node3 = graph.matmul(node1, node2);
+    gork::Tensor<float> &result = graph.compute(node3);
+    REQUIRE(result.shape_[0] == 3);
+    REQUIRE(result.shape_[1] == 5);
 }

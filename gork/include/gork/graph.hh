@@ -4,6 +4,7 @@
 #include "gork/ops.hh"
 #include "gork/tensor.hh"
 #include <algorithm>
+#include <iterator>
 #include <optional>
 #include <vector>
 
@@ -44,6 +45,8 @@ class Graph {
     NodeId addTensor(Tensor<T> &&tensor);
     NodeId matmul(NodeId rhs, NodeId lhs);
     NodeId add(NodeId rhs, NodeId lhs);
+    Node<T> &get(NodeId id);
+    Tensor<T> &compute(NodeId toCompute);
 
 #ifdef GORK_TESTING
     const std::vector<Node<T>> &testNodes() const;
@@ -67,7 +70,7 @@ NodeId Graph<T>::matmul(NodeId lhs, NodeId rhs) {
     Node<T> &rightNode = nodes_[rhs];
     Node<T> &leftNode = nodes_[lhs];
 
-    Tensor<T> result{std::vector{leftNode.tensor_.shape_[1], rightNode.tensor_.shape_[0]}};
+    Tensor<T> result{std::vector{leftNode.tensor_.shape_[0], rightNode.tensor_.shape_[1]}};
     nodes_.emplace_back(std::move(result), TensorOp::Matmul, std::vector<NodeId>{lhs, rhs});
 
     return nodes_.size() - 1;
@@ -81,6 +84,46 @@ NodeId Graph<T>::add(NodeId lhs, NodeId rhs) {
     nodes_.emplace_back(std::move(result), TensorOp::Add, std::vector<NodeId>{lhs, rhs});
 
     return nodes_.size() - 1;
+}
+
+template <typename T>
+Node<T> &Graph<T>::get(NodeId id) {
+    return nodes_[id];
+}
+
+template <typename T>
+Tensor<T> &Graph<T>::compute(NodeId toCompute) {
+    std::vector<NodeId> dependencies{};
+    std::vector<NodeId> stack{};
+
+    stack.push_back(toCompute);
+
+    while (stack.size() > 0) {
+        NodeId nodeId = stack.back();
+        stack.pop_back();
+
+        dependencies.push_back(nodeId);
+
+        Node<T> &node = get(nodeId);
+
+        for (NodeId parentId : node.inputs_) {
+            stack.push_back(parentId);
+        }
+    }
+
+    std::reverse(std::begin(dependencies), std::end(dependencies));
+
+    for (size_t i = dependencies.size(); i--;) {
+        NodeId nodeId = dependencies[i];
+        Node<T> node = get(nodeId);
+        if (node.op_ == TensorOp::Matmul) {
+            Node<T> child0 = get(node.inputs_[0]);
+            Node<T> child1 = get(node.inputs_[1]);
+            node.tensor_ = gork::matmul(child0.tensor_, child1.tensor_);
+        }
+    }
+
+    return get(toCompute).tensor_;
 }
 
 #ifdef GORK_TESTING
