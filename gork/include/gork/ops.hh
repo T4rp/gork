@@ -84,12 +84,12 @@ Tensor<T> broadcast_add(Tensor<T> &mat, Tensor<T> &vec) {
     size_t m = tensor.shape_[0];
     size_t n = tensor.shape_[1];
 
-    assert(n == vec.shape_[1]);
-    assert(vec.shape_[0] == 1);
+    assert(m == vec.shape_[0]);
+    assert(vec.shape_[1] == 1);
 
     for (size_t i = 0; i < m; i++) {
         for (size_t j = 0; j < n; j++) {
-            tensor.at({i, j}) += vec.at({0, j});
+            tensor.at({i, j}) += vec.at({i, 0});
         }
     }
 

@@ -80,7 +80,7 @@ NodeId Graph<T>::matmul(NodeId lhs, NodeId rhs) {
 }
 
 template <typename T>
-NodeId Graph<T>::broadcastAdd(NodeId rhs, NodeId lhs) {
+NodeId Graph<T>::broadcastAdd(NodeId lhs, NodeId rhs) {
     Node<T> &rightNode = nodes_[rhs];
     Node<T> &leftNode = nodes_[lhs];
 
