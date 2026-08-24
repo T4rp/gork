@@ -2,6 +2,7 @@
 #define GORK_OPS_H_
 
 #include "tensor.hh"
+#include <cstddef>
 
 namespace gork {
 
@@ -54,6 +55,26 @@ Tensor<T> transpose(Tensor<T> &mat) {
     }
 
     return outTensor;
+}
+
+template <typename T>
+Tensor<T> add(Tensor<T> &mat, Tensor<T> &vec) {
+    Tensor<T> tensor = mat;
+
+    size_t m = tensor.shape_[0];
+    size_t n = tensor.shape_[1];
+
+    assert(m == vec.shape_[0]);
+    assert(n == vec.shape_[1]);
+
+    for (size_t i = 0; i < m; i++) {
+
+        for (size_t j = 0; j < n; j++) {
+            tensor.at({i, j}) += vec.at({i, j});
+        }
+    }
+
+    return tensor;
 }
 
 template <typename T>
