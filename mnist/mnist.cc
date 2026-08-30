@@ -1,7 +1,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "gork/mnist.hh"
+#include "mnist/mnist.hh"
 
 namespace {
 

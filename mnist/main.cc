@@ -8,7 +8,7 @@
 #include <vector>
 #include <zlib.h>
 
-#include "gork/mnist.hh"
+#include "mnist/mnist.hh"
 
 std::vector<uint8_t> ungzFile(std::string_view path) {
     std::vector<uint8_t> unzipped{};
