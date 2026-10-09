@@ -18,7 +18,7 @@ class Node {
     TensorOp op_;
 
     Tensor<T> tensor_;
-    std::optional<Tensor<T>> gradient_;
+    Tensor<T> gradient_;
 
     std::vector<NodeId> inputs_;
 
@@ -27,11 +27,13 @@ class Node {
 };
 
 template <typename T>
-Node<T>::Node(Tensor<T> tensor, TensorOp op) : tensor_{std::move(tensor)}, op_{op} {}
+Node<T>::Node(Tensor<T> tensor, TensorOp op)
+    : tensor_{std::move(tensor)}, gradient_{std::vector<size_t>{0}}, op_{op} {}
 
 template <typename T>
 Node<T>::Node(Tensor<T> tensor, TensorOp op, std::vector<NodeId> inputs)
-    : tensor_{std::move(tensor)}, op_{op}, inputs_{std::move(inputs)} {}
+    : tensor_{std::move(tensor)}, gradient_{std::vector<size_t>{0}}, op_{op},
+      inputs_{std::move(inputs)} {}
 
 template <typename T>
 class Graph {
@@ -51,6 +53,7 @@ class Graph {
 
     Node<T> &get(NodeId id);
     Tensor<T> &compute(NodeId toCompute);
+    void backwards(NodeId toCompute);
 
 #ifdef GORK_TESTING
     const std::vector<Node<T>> &testNodes() const;
@@ -154,6 +157,12 @@ Tensor<T> &Graph<T>::compute(NodeId toCompute) {
             node.tensor_ = gork::add(child0.tensor_, child1.tensor_);
             break;
         }
+        case TensorOp::Sub: {
+            Node<T> &child0 = get(node.inputs_[0]);
+            Node<T> &child1 = get(node.inputs_[1]);
+            node.tensor_ = gork::add(child0.tensor_, child1.tensor_);
+            break;
+        }
         case TensorOp::BroadcastAdd: {
             Node<T> &child0 = get(node.inputs_[0]);
             Node<T> &child1 = get(node.inputs_[1]);
@@ -169,6 +178,64 @@ Tensor<T> &Graph<T>::compute(NodeId toCompute) {
     }
 
     return get(toCompute).tensor_;
+}
+
+template <typename T>
+void Graph<T>::backwards(NodeId toCompute) {
+    std::vector<NodeId> dependencies{};
+    std::vector<NodeId> stack{};
+
+    stack.push_back(toCompute);
+
+    while (stack.size() > 0) {
+        NodeId nodeId = stack.back();
+        stack.pop_back();
+
+        dependencies.push_back(nodeId);
+
+        Node<T> &node = get(nodeId);
+
+        for (NodeId parentId : node.inputs_) {
+            stack.push_back(parentId);
+        }
+    }
+
+    std::reverse(std::begin(dependencies), std::end(dependencies));
+
+    for (size_t i = dependencies.size(); i--;) {
+        NodeId nodeId = dependencies[i];
+        Node<T> &outNode = get(nodeId);
+
+        switch (outNode.op_) {
+        case TensorOp::Add:
+        case TensorOp::BroadcastAdd: {
+            Node<T> &inode0 = get(outNode.inputs_[0]);
+            Node<T> &inode1 = get(outNode.inputs_[1]);
+
+            inode0.gradient_ = outNode.gradient_;
+            inode1.gradient_ = outNode.gradient_;
+
+            break;
+        }
+        case TensorOp::Matmul: {
+            Node<T> &inNode0 = get(outNode.inputs_[0]);
+            Node<T> &inNode1 = get(outNode.inputs_[1]);
+
+            inNode0.gradient_ = gork::matmul(outNode.gradient_, gork::transpose(inNode1.tensor_));
+            inNode1.gradient_ = gork::matmul(gork::transpose(inNode0.tensor_), outNode.gradient_);
+
+            break;
+        }
+        case TensorOp::Relu: {
+            Node<T> &inNode0 = get(outNode.inputs_[0]);
+
+            inNode0.gradient_ = gork::mul_elementwise(gork::broadcast_relu_deriv(inNode0.tensor_),
+                                                      outNode.gradient_);
+
+            break;
+        }
+        }
+    }
 }
 
 #ifdef GORK_TESTING

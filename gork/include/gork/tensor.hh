@@ -17,8 +17,8 @@ class Tensor {
     std::vector<size_t> strides_;
 
     Tensor(const std::vector<size_t> &tensor_shape);
+    T at(std::initializer_list<size_t> index) const;
     T &at(std::initializer_list<size_t> index);
-    Tensor<T> clone();
 
     void dump_mat();
 };
@@ -38,6 +38,21 @@ Tensor<T>::Tensor(const std::vector<size_t> &shape) : shape_(shape) {
         strides_[i] = stride;
         stride *= shape[i];
     }
+}
+
+template <typename T>
+T Tensor<T>::at(std::initializer_list<size_t> index) const {
+    assert(index.size() == shape_.size());
+
+    size_t offset = 0;
+    size_t i = 0;
+
+    for (auto idx : index) {
+        offset += idx * strides_[i];
+        i++;
+    }
+
+    return data_[offset];
 }
 
 template <typename T>

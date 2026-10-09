@@ -11,12 +11,17 @@ enum class TensorOp {
     Input,
     Matmul,
     Add,
+    Sub,
     BroadcastAdd,
     Relu,
+
+    ElementWiseAdd,
+    ReluDeriv,
+    Reduce,
 };
 
 template <typename T>
-Tensor<T> matmul(Tensor<T> &a, Tensor<T> &b) {
+Tensor<T> matmul(const Tensor<T> &a, const Tensor<T> &b) {
     size_t m = a.shape_[0];
     size_t n = a.shape_[1];
     size_t p = b.shape_[1];
@@ -42,7 +47,7 @@ Tensor<T> matmul(Tensor<T> &a, Tensor<T> &b) {
 }
 
 template <typename T>
-Tensor<T> transpose(Tensor<T> &mat) {
+Tensor<T> transpose(const Tensor<T> &mat) {
     size_t m = mat.shape_[1];
     size_t n = mat.shape_[0];
 
@@ -59,7 +64,7 @@ Tensor<T> transpose(Tensor<T> &mat) {
 }
 
 template <typename T>
-Tensor<T> add(Tensor<T> &mat, Tensor<T> &vec) {
+Tensor<T> add(const Tensor<T> &mat, const Tensor<T> &vec) {
     Tensor<T> tensor = mat;
 
     size_t m = tensor.shape_[0];
@@ -69,7 +74,6 @@ Tensor<T> add(Tensor<T> &mat, Tensor<T> &vec) {
     assert(n == vec.shape_[1]);
 
     for (size_t i = 0; i < m; i++) {
-
         for (size_t j = 0; j < n; j++) {
             tensor.at({i, j}) += vec.at({i, j});
         }
@@ -79,7 +83,42 @@ Tensor<T> add(Tensor<T> &mat, Tensor<T> &vec) {
 }
 
 template <typename T>
-Tensor<T> broadcast_add(Tensor<T> &mat, Tensor<T> &vec) {
+Tensor<T> sub(const Tensor<T> &mat, const Tensor<T> &vec) {
+    Tensor<T> tensor = mat;
+
+    size_t m = tensor.shape_[0];
+    size_t n = tensor.shape_[1];
+
+    assert(m == vec.shape_[0]);
+    assert(n == vec.shape_[1]);
+
+    for (size_t i = 0; i < m; i++) {
+        for (size_t j = 0; j < n; j++) {
+            tensor.at({i, j}) -= vec.at({i, j});
+        }
+    }
+
+    return tensor;
+}
+
+template <typename T>
+Tensor<T> mul_elementwise(const Tensor<T> &mat0, const Tensor<T> &mat1) {
+    Tensor<T> tensor = mat0;
+
+    size_t m = tensor.shape_[0];
+    size_t n = tensor.shape_[1];
+
+    for (size_t i = 0; i < m; i++) {
+        for (size_t j = 0; j < n; j++) {
+            tensor.at({i, j}) *= mat1.at({i, j});
+        }
+    }
+
+    return tensor;
+}
+
+template <typename T>
+Tensor<T> broadcast_add(const Tensor<T> &mat, const Tensor<T> &vec) {
     Tensor<T> tensor = mat;
 
     size_t m = tensor.shape_[0];
@@ -98,7 +137,7 @@ Tensor<T> broadcast_add(Tensor<T> &mat, Tensor<T> &vec) {
 }
 
 template <typename T>
-Tensor<T> broadcast_relu(Tensor<T> &tensor) {
+Tensor<T> broadcast_relu(const Tensor<T> &tensor) {
     Tensor<T> newTensor = tensor;
 
     for (size_t i = 0; i < newTensor.data_.size(); i++) {
@@ -109,6 +148,21 @@ Tensor<T> broadcast_relu(Tensor<T> &tensor) {
         }
 
         newTensor.data_[i] = out;
+    }
+
+    return newTensor;
+}
+
+template <typename T>
+Tensor<T> broadcast_relu_deriv(const Tensor<T> &tensor) {
+    Tensor<T> newTensor = tensor;
+
+    for (size_t i = 0; i < newTensor.data_.size(); i++) {
+        T out{0.0};
+
+        if (newTensor.data_[i] > 0) {
+            out = 1.0;
+        }
     }
 
     return newTensor;
