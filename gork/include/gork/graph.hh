@@ -5,7 +5,6 @@
 #include "gork/tensor.hh"
 #include <algorithm>
 #include <iterator>
-#include <optional>
 #include <vector>
 
 namespace gork {

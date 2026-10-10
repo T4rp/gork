@@ -12,11 +12,13 @@ namespace gork {
 template <typename T>
 class Tensor {
   public:
-    std::vector<T> data_;
+    T *data_;
+    size_t size_;
     std::vector<size_t> shape_;
     std::vector<size_t> strides_;
 
     Tensor(const std::vector<size_t> &tensor_shape);
+    ~Tensor();
     T at(std::initializer_list<size_t> index) const;
     T &at(std::initializer_list<size_t> index);
 
@@ -25,12 +27,12 @@ class Tensor {
 
 template <typename T>
 Tensor<T>::Tensor(const std::vector<size_t> &shape) : shape_(shape) {
-    size_t data_size = 1;
+    size_ = 1;
     for (auto dim : shape) {
-        data_size *= dim;
+        size_ *= dim;
     }
 
-    data_.resize(data_size);
+    data_ = new T[size_];
     strides_.resize(shape.size());
 
     size_t stride = 1;
@@ -38,6 +40,11 @@ Tensor<T>::Tensor(const std::vector<size_t> &shape) : shape_(shape) {
         strides_[i] = stride;
         stride *= shape[i];
     }
+}
+
+template <typename T>
+Tensor<T>::~Tensor() {
+    delete[] data_;
 }
 
 template <typename T>

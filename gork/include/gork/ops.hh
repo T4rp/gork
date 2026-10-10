@@ -140,7 +140,7 @@ template <typename T>
 Tensor<T> broadcast_relu(const Tensor<T> &tensor) {
     Tensor<T> newTensor = tensor;
 
-    for (size_t i = 0; i < newTensor.data_.size(); i++) {
+    for (size_t i = 0; i < newTensor.size_; i++) {
         T out{0.0};
 
         if (newTensor.data_[i] > 0) {
@@ -157,7 +157,7 @@ template <typename T>
 Tensor<T> broadcast_relu_deriv(const Tensor<T> &tensor) {
     Tensor<T> newTensor = tensor;
 
-    for (size_t i = 0; i < newTensor.data_.size(); i++) {
+    for (size_t i = 0; i < newTensor.size_; i++) {
         T out{0.0};
 
         if (newTensor.data_[i] > 0) {
