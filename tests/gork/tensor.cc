@@ -2,6 +2,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 TEST_CASE("Tensors can be made", "[tensor]") {
     std::vector<size_t> shape{256, 128};
@@ -30,4 +31,11 @@ TEST_CASE("Tensors can be dumped", "[tensor]") {
     tensor.dump_mat();
 
     std::cout.rdbuf(old_buffer);
+}
+
+TEST_CASE("Tensors can work as scalars", "[tensor]") {
+    gork::Tensor<float> tensor{std::vector<size_t>{}};
+    tensor.at({}) = 20.0;
+
+    REQUIRE(tensor.at({}) == 20.0);
 }
