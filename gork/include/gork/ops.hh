@@ -2,6 +2,7 @@
 #define GORK_OPS_H_
 
 #include "tensor.hh"
+#include <cassert>
 #include <cstddef>
 
 namespace gork {
@@ -14,9 +15,10 @@ enum class TensorOp {
     Sub,
     BroadcastAdd,
     Relu,
-
-    ElementWiseAdd,
     ReluDeriv,
+
+    ElementWiseSquare,
+
     Reduce,
 };
 
@@ -64,54 +66,39 @@ Tensor<T> transpose(const Tensor<T> &mat) {
 }
 
 template <typename T>
-Tensor<T> add(const Tensor<T> &mat, const Tensor<T> &vec) {
-    Tensor<T> tensor = mat;
+Tensor<T> add(const Tensor<T> &lhs, const Tensor<T> &rhs) {
+    assert(lhs.size_ == rhs.size_);
 
-    size_t m = tensor.shape_[0];
-    size_t n = tensor.shape_[1];
+    Tensor<T> tensor = lhs;
 
-    assert(m == vec.shape_[0]);
-    assert(n == vec.shape_[1]);
-
-    for (size_t i = 0; i < m; i++) {
-        for (size_t j = 0; j < n; j++) {
-            tensor.at({i, j}) += vec.at({i, j});
-        }
+    for (size_t i = 0; i < rhs.size_; i++) {
+        tensor.data_[i] += rhs.data_[i];
     }
 
     return tensor;
 }
 
 template <typename T>
-Tensor<T> sub(const Tensor<T> &mat, const Tensor<T> &vec) {
-    Tensor<T> tensor = mat;
+Tensor<T> sub(const Tensor<T> &lhs, const Tensor<T> &rhs) {
+    assert(lhs.size_ == rhs.size_);
 
-    size_t m = tensor.shape_[0];
-    size_t n = tensor.shape_[1];
+    Tensor<T> tensor = lhs;
 
-    assert(m == vec.shape_[0]);
-    assert(n == vec.shape_[1]);
-
-    for (size_t i = 0; i < m; i++) {
-        for (size_t j = 0; j < n; j++) {
-            tensor.at({i, j}) -= vec.at({i, j});
-        }
+    for (size_t i = 0; i < rhs.size_; i++) {
+        tensor.data_[i] -= rhs.data_[i];
     }
 
     return tensor;
 }
 
 template <typename T>
-Tensor<T> mul_elementwise(const Tensor<T> &mat0, const Tensor<T> &mat1) {
-    Tensor<T> tensor = mat0;
+Tensor<T> mul_elementwise(const Tensor<T> &lhs, const Tensor<T> &rhs) {
+    assert(lhs.size_ == rhs.size_);
 
-    size_t m = tensor.shape_[0];
-    size_t n = tensor.shape_[1];
+    Tensor<T> tensor = lhs;
 
-    for (size_t i = 0; i < m; i++) {
-        for (size_t j = 0; j < n; j++) {
-            tensor.at({i, j}) *= mat1.at({i, j});
-        }
+    for (size_t i = 0; i < lhs.size_; i++) {
+        tensor.data_[i] *= rhs.data_[i];
     }
 
     return tensor;
