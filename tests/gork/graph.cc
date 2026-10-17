@@ -41,7 +41,7 @@ TEST_CASE("Nodes can be retrieved", "[graph]") {
     gork::Graph<float> graph{};
 
     gork::NodeId node1 = graph.addTensor(gork::Tensor<float>{std::vector<size_t>{4, 2}});
-    gork::Node<float> &node = graph.get(node1);
+    gork::Graph<float>::Node &node = graph.get(node1);
 
     REQUIRE(node.tensor_.shape_[0] == 4);
     REQUIRE(node.tensor_.shape_[1] == 2);
