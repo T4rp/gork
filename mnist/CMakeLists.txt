@@ -1,4 +1,8 @@
-add_library(mnist mnist.cc)
+add_library(mnist
+    src/mnist.cc
+    src/LabelsDb.cc
+    src/ImagesDb.cc
+)
 
 target_include_directories(mnist
     PUBLIC
@@ -14,7 +18,7 @@ add_executable(mnist_example)
 
 target_sources(mnist_example
     PRIVATE
-        main.cc
+        example.cc
 )
 
 target_link_libraries(mnist_example

@@ -2,7 +2,7 @@ add_executable(testing)
 
 target_sources(testing
     PRIVATE
-        main.cc
+        src/main.cc
 )
 
 target_link_libraries(testing
