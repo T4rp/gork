@@ -1,8 +1,8 @@
 find_package(Catch2 3 REQUIRED)
 
 add_executable(tests
-    gork/graph.cc
-    gork/tensor.cc
+    gork/Graph.cc
+    gork/Tensor.cc
 )
 
 target_link_libraries(tests
