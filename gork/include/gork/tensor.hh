@@ -19,6 +19,7 @@ class Tensor {
     std::vector<size_t> shape_;
     std::vector<size_t> strides_;
 
+    Tensor();
     Tensor(const std::vector<size_t> &tensor_shape);
     Tensor(const Tensor<T> &other);
     Tensor(Tensor<T> &&other) noexcept;
@@ -27,11 +28,15 @@ class Tensor {
 
     ~Tensor();
 
+    bool isScalar() const;
     T at(std::initializer_list<size_t> index) const;
     T &at(std::initializer_list<size_t> index);
 
     void dump_mat();
 };
+
+template <typename T>
+Tensor<T>::Tensor() {}
 
 template <typename T>
 Tensor<T>::Tensor(const std::vector<size_t> &shape)
@@ -100,6 +105,11 @@ Tensor<T> &Tensor<T>::operator=(Tensor<T> &&rhs) noexcept {
 template <typename T>
 Tensor<T>::~Tensor() {
     delete[] data_;
+}
+
+template <typename T>
+bool Tensor<T>::isScalar() const {
+    return size_ == 1;
 }
 
 template <typename T>

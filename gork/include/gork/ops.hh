@@ -4,6 +4,8 @@
 #include "tensor.hh"
 #include <cassert>
 #include <cstddef>
+#include <stdexcept>
+#include <vector>
 
 namespace gork {
 
@@ -93,12 +95,28 @@ Tensor<T> sub(const Tensor<T> &lhs, const Tensor<T> &rhs) {
 
 template <typename T>
 Tensor<T> mul_elementwise(const Tensor<T> &lhs, const Tensor<T> &rhs) {
-    assert(lhs.size_ == rhs.size_);
+    bool leftIsScalar = lhs.isScalar();
+    bool rightIsScalar = rhs.isScalar();
 
-    Tensor<T> tensor = lhs;
+    if (!leftIsScalar && !rightIsScalar && lhs.size_ != rhs.size_) {
+        throw std::runtime_error("Incompatible tensor sizes");
+    }
 
-    for (size_t i = 0; i < lhs.size_; i++) {
-        tensor.data_[i] *= rhs.data_[i];
+    Tensor<T> tensor;
+    size_t sizeToUse;
+
+    if (lhs.size_ > rhs.size_) {
+        tensor = Tensor<T>{lhs.shape_};
+        sizeToUse = lhs.size_;
+    } else {
+        tensor = Tensor<T>{rhs.shape_};
+        sizeToUse = rhs.size_;
+    }
+
+    for (size_t i = 0; i < sizeToUse; i++) {
+        T left = leftIsScalar ? lhs.data_[0] : lhs.data_[i];
+        T right = rightIsScalar ? rhs.data_[0] : rhs.data_[i];
+        tensor.data_[i] = left * right;
     }
 
     return tensor;
@@ -150,6 +168,8 @@ Tensor<T> broadcast_relu_deriv(const Tensor<T> &tensor) {
         if (newTensor.data_[i] > 0) {
             out = 1.0;
         }
+
+        newTensor.data_[i] = out;
     }
 
     return newTensor;

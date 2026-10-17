@@ -171,8 +171,8 @@ TEST_CASE("Relu backwards should compute", "[graph]") {
     gork::Tensor<float> tensor1{std::vector<size_t>{2, 3}};
 
     tensor1.at({0, 0}) = 6;
-    tensor1.at({1, 0}) = 7;
     tensor1.at({0, 1}) = -6;
+    tensor1.at({1, 0}) = 7;
     tensor1.at({1, 1}) = -7;
 
     gork::NodeId node1 = graph.addTensor(std::move(tensor1));
@@ -180,5 +180,10 @@ TEST_CASE("Relu backwards should compute", "[graph]") {
     auto node2 = graph.relu(node1);
     graph.backwards(node2);
 
-    // TODO: actually test gradients
+    gork::Tensor<float> &gradient = graph.get(node1).gradient_;
+
+    REQUIRE(gradient.at({0, 0}) == 1);
+    REQUIRE(gradient.at({0, 1}) == 0);
+    REQUIRE(gradient.at({1, 0}) == 1);
+    REQUIRE(gradient.at({1, 1}) == 0);
 }

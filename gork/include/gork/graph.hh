@@ -27,11 +27,15 @@ class Node {
 
 template <typename T>
 Node<T>::Node(Tensor<T> tensor, TensorOp op)
-    : tensor_{std::move(tensor)}, gradient_{std::vector<size_t>{0}}, op_{op} {}
+    : tensor_{std::move(tensor)},
+      gradient_{std::vector<size_t>{0}},
+      op_{op} {}
 
 template <typename T>
 Node<T>::Node(Tensor<T> tensor, TensorOp op, std::vector<NodeId> inputs)
-    : tensor_{std::move(tensor)}, gradient_{std::vector<size_t>{0}}, op_{op},
+    : tensor_{std::move(tensor)},
+      gradient_{std::vector<size_t>{0}},
+      op_{op},
       inputs_{std::move(inputs)} {}
 
 template <typename T>
@@ -200,6 +204,12 @@ void Graph<T>::backwards(NodeId toCompute) {
     }
 
     std::reverse(std::begin(dependencies), std::end(dependencies));
+
+    Node<T> &resultNode = get(toCompute);
+
+    Tensor<T> resultGradient{std::vector<size_t>{}};
+    resultGradient.at({}) = 1.0;
+    resultNode.gradient_ = std::move(resultGradient);
 
     for (size_t i = dependencies.size(); i--;) {
         NodeId nodeId = dependencies[i];
