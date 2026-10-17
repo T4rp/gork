@@ -1,7 +1,7 @@
 #ifndef GORK_OPS_H_
 #define GORK_OPS_H_
 
-#include "tensor.hh"
+#include "Tensor.hh"
 #include <cassert>
 #include <cstddef>
 #include <stdexcept>
@@ -123,7 +123,7 @@ Tensor<T> mul_elementwise(const Tensor<T> &lhs, const Tensor<T> &rhs) {
 }
 
 template <typename T>
-Tensor<T> broadcast_add(const Tensor<T> &mat, const Tensor<T> &vec) {
+Tensor<T> broadcastAdd(const Tensor<T> &mat, const Tensor<T> &vec) {
     Tensor<T> tensor = mat;
 
     size_t m = tensor.shape_[0];
@@ -142,7 +142,7 @@ Tensor<T> broadcast_add(const Tensor<T> &mat, const Tensor<T> &vec) {
 }
 
 template <typename T>
-Tensor<T> broadcast_relu(const Tensor<T> &tensor) {
+Tensor<T> broadcastRelu(const Tensor<T> &tensor) {
     Tensor<T> newTensor = tensor;
 
     for (size_t i = 0; i < newTensor.size_; i++) {
@@ -159,7 +159,7 @@ Tensor<T> broadcast_relu(const Tensor<T> &tensor) {
 }
 
 template <typename T>
-Tensor<T> broadcast_relu_deriv(const Tensor<T> &tensor) {
+Tensor<T> broadcastReluDeriv(const Tensor<T> &tensor) {
     Tensor<T> newTensor = tensor;
 
     for (size_t i = 0; i < newTensor.size_; i++) {

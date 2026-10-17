@@ -1,5 +1,5 @@
-#include "gork/graph.hh"
-#include "gork/tensor.hh"
+#include "gork/Graph.hh"
+#include "gork/Tensor.hh"
 #include <catch2/catch_test_macros.hpp>
 #include <vector>
 

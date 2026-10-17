@@ -1,4 +1,4 @@
-#include "gork/tensor.hh"
+#include "gork/Tensor.hh"
 #include <catch2/catch_test_macros.hpp>
 #include <iostream>
 #include <sstream>

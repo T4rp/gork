@@ -15,7 +15,7 @@ class LabelsDb {
     uint8_t *labelData_;
 
     LabelsDb(std::vector<uint8_t> fileData);
-    uint8_t get_label(size_t n) const;
+    uint8_t getLabel(size_t n) const;
 };
 
 class ImagesDb {
@@ -29,7 +29,7 @@ class ImagesDb {
     uint8_t *imageData_;
 
     ImagesDb(std::vector<uint8_t> fileData);
-    const uint8_t *get_image(size_t n) const;
+    const uint8_t *getImage(size_t n) const;
 };
 
 } // namespace mnist

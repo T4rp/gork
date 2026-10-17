@@ -2,7 +2,7 @@
 #define GORK_GRAPH_H_
 
 #include "gork/ops.hh"
-#include "gork/tensor.hh"
+#include "gork/Tensor.hh"
 #include <algorithm>
 #include <iterator>
 #include <vector>
@@ -168,12 +168,12 @@ Tensor<T> &Graph<T>::compute(NodeId toCompute) {
         case TensorOp::BroadcastAdd: {
             Node &child0 = get(node.inputs_[0]);
             Node &child1 = get(node.inputs_[1]);
-            node.tensor_ = gork::broadcast_add(child0.tensor_, child1.tensor_);
+            node.tensor_ = gork::broadcastAdd(child0.tensor_, child1.tensor_);
             break;
         }
         case TensorOp::Relu: {
             Node &child0 = get(node.inputs_[0]);
-            node.tensor_ = gork::broadcast_relu(child0.tensor_);
+            node.tensor_ = gork::broadcastRelu(child0.tensor_);
             break;
         }
         }
@@ -237,7 +237,7 @@ void Graph<T>::backwards(NodeId toCompute) {
         case TensorOp::Relu: {
             Node &inNode0 = get(outNode.inputs_[0]);
 
-            inNode0.gradient_ = gork::mul_elementwise(gork::broadcast_relu_deriv(inNode0.tensor_),
+            inNode0.gradient_ = gork::mul_elementwise(gork::broadcastReluDeriv(inNode0.tensor_),
                                                       outNode.gradient_);
 
             break;

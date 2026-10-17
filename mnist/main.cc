@@ -56,13 +56,13 @@ int main() {
     mnist::ImagesDb images{std::move(imagesData)};
 
     for (size_t i = 0; i < 10; i++) {
-        std::cout << std::to_string(labels.get_label(i));
+        std::cout << std::to_string(labels.getLabel(i));
 
         std::cout << std::endl;
 
         for (size_t y = 0; y < images.columns_; y++) {
             for (size_t x = 0; x < images.rows_; x++) {
-                std::cout << to_char(images.get_image(i)[x + y * images.columns_]);
+                std::cout << to_char(images.getImage(i)[x + y * images.columns_]);
             }
             std::cout << std::endl;
         }
