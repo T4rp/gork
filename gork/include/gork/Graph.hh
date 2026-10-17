@@ -1,8 +1,8 @@
 #ifndef GORK_GRAPH_H_
 #define GORK_GRAPH_H_
 
-#include "gork/ops.hh"
 #include "gork/Tensor.hh"
+#include "gork/ops.hh"
 #include <algorithm>
 #include <iterator>
 #include <vector>
@@ -27,7 +27,8 @@ class Graph {
         Node(Tensor<T> tensor, TensorOp op, std::vector<NodeId> inputs);
     };
 
-    Graph() {}
+    Graph()
+        : nodes_{} {}
 
     NodeId addInput(Tensor<T> &&tensor);
     NodeId addTensor(Tensor<T> &&tensor);
@@ -41,9 +42,7 @@ class Graph {
     Tensor<T> &compute(NodeId toCompute);
     void backwards(NodeId toCompute);
 
-#ifdef GORK_TESTING
-    const std::vector<Node> &testNodes() const;
-#endif
+    const std::vector<Node> &getNodes() const;
 
   private:
     std::vector<Node> nodes_;
@@ -237,8 +236,8 @@ void Graph<T>::backwards(NodeId toCompute) {
         case TensorOp::Relu: {
             Node &inNode0 = get(outNode.inputs_[0]);
 
-            inNode0.gradient_ = gork::mul_elementwise(gork::broadcastReluDeriv(inNode0.tensor_),
-                                                      outNode.gradient_);
+            inNode0.gradient_ =
+                gork::mul_elementwise(gork::broadcastReluDeriv(inNode0.tensor_), outNode.gradient_);
 
             break;
         }
@@ -246,12 +245,10 @@ void Graph<T>::backwards(NodeId toCompute) {
     }
 }
 
-#ifdef GORK_TESTING
 template <typename T>
-const std::vector<typename Graph<T>::Node> &Graph<T>::testNodes() const {
+const std::vector<typename Graph<T>::Node> &Graph<T>::getNodes() const {
     return nodes_;
 }
-#endif
 
 } // namespace gork
 

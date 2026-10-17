@@ -12,5 +12,3 @@ target_link_libraries(tests
         mnist
 )
 
-target_compile_definitions(tests PRIVATE GORK_TESTING)
-
