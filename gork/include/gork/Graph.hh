@@ -5,6 +5,7 @@
 #include "gork/ops.hh"
 #include <algorithm>
 #include <iterator>
+#include <unordered_map>
 #include <vector>
 
 namespace gork {
@@ -27,22 +28,36 @@ class Graph {
         Node(Tensor<T> tensor, TensorOp op, std::vector<NodeId> inputs);
     };
 
+    struct BackwardsGraphResult {
+        /// graph for backwards pass
+        Graph<T> graph;
+        /// predicted value of forward pass
+        NodeId prediction;
+        /// expected value with inputs
+        NodeId expected;
+        /// input values
+        std::vector<NodeId> inputs;
+        /// maps forward nodes to backward nodes
+        std::unordered_map<NodeId, NodeId> nodeMap;
+    };
+
     Graph()
         : nodes_{} {}
 
     NodeId addInput(Tensor<T> &&tensor);
     NodeId addTensor(Tensor<T> &&tensor);
+    Node &get(NodeId id);
+    const std::vector<Node> &getNodes() const;
 
     NodeId matmul(NodeId lhs, NodeId rhs);
     NodeId broadcastAdd(NodeId lhs, NodeId rhs);
     NodeId add(NodeId lhs, NodeId rhs);
     NodeId relu(NodeId tensor);
 
-    Node &get(NodeId id);
     Tensor<T> &compute(NodeId toCompute);
-    void backwards(NodeId toCompute);
 
-    const std::vector<Node> &getNodes() const;
+    void backwards(NodeId toCompute);
+    BackwardsGraphResult buildBackwardsGraph(NodeId toCompute);
 
   private:
     std::vector<Node> nodes_;
@@ -172,7 +187,7 @@ Tensor<T> &Graph<T>::compute(NodeId toCompute) {
         }
         case TensorOp::Relu: {
             Node &child0 = get(node.inputs_[0]);
-            node.tensor_ = gork::broadcastRelu(child0.tensor_);
+            node.tensor_ = gork::relu(child0.tensor_);
             break;
         }
         }
@@ -237,12 +252,19 @@ void Graph<T>::backwards(NodeId toCompute) {
             Node &inNode0 = get(outNode.inputs_[0]);
 
             inNode0.gradient_ =
-                gork::elementwiseMul(gork::broadcastReluDeriv(inNode0.tensor_), outNode.gradient_);
+                gork::mul(gork::reluDeriv(inNode0.tensor_), outNode.gradient_);
 
             break;
         }
         }
     }
+}
+
+template <typename T>
+typename Graph<T>::BackwardsGraphResult Graph<T>::buildBackwardsGraph(NodeId toCompute) {
+    BackwardsGraphResult result{};
+
+    return result;
 }
 
 template <typename T>

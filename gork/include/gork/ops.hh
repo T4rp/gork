@@ -16,15 +16,16 @@ enum class TensorOp {
     Transpose,
     Add,
     Sub,
+    Mul,
+    ElementwiseSquare,
     BroadcastAdd,
     Relu,
     ReluDeriv,
-    ElementWiseMul,
-    ElementWiseSquare,
 
     Reduce,
 };
 
+// TODO: support multiple dimensions
 template <typename T>
 Tensor<T> matmul(const Tensor<T> &a, const Tensor<T> &b) {
     size_t m = a.shape_[0];
@@ -39,11 +40,9 @@ Tensor<T> matmul(const Tensor<T> &a, const Tensor<T> &b) {
     for (size_t i = 0; i < m; i++) {
         for (size_t j = 0; j < p; j++) {
             T sum = 0;
-
             for (size_t k = 0; k < n; k++) {
                 sum += a.at({i, k}) * b.at({k, j});
             }
-
             out.at({i, j}) = sum;
         }
     }
@@ -57,7 +56,7 @@ Tensor<T> transpose(const Tensor<T> &mat) {
     size_t n = mat.shape_[0];
 
     std::vector<size_t> outTensorShape{m, n};
-    Tensor<T> outTensor{outTensor};
+    Tensor<T> outTensor{outTensor.shape_};
 
     for (size_t i = 0; i < m; i++) {
         for (size_t j = 0; j < n; j++) {
@@ -70,57 +69,131 @@ Tensor<T> transpose(const Tensor<T> &mat) {
 
 template <typename T>
 Tensor<T> add(const Tensor<T> &lhs, const Tensor<T> &rhs) {
-    assert(lhs.size_ == rhs.size_);
+    if (lhs.isScalar() && rhs.isScalar()) {
+        Tensor<T> tensor{};
+        tensor.data_[0] = lhs.data_[0] + rhs.data_[0];
+        return tensor;
+    } else if (rhs.isScalar()) {
+        Tensor<T> tensor{lhs.shape_};
+        T scalar = rhs.data_[0];
+        for (size_t i = 0; i < lhs.size_; i++) {
+            tensor.data_[i] = lhs.data_[i] + scalar;
+        }
+        return tensor;
+    } else if (lhs.isScalar()) {
+        Tensor<T> tensor{rhs.shape_};
+        T scalar = lhs.data_[0];
+        for (size_t i = 0; i < rhs.size_; i++) {
+            tensor.data_[i] = scalar + rhs.data_[i];
+        }
+        return tensor;
+    } else {
+        if (lhs.shape_.size() != rhs.shape_.size())
+            throw std::runtime_error("Incompatible tensor shape");
 
-    Tensor<T> tensor = lhs;
+        for (size_t i = 0; i < lhs.shape_.size(); i++) {
+            if (lhs.shape_[i] != rhs.shape_[i])
+                throw std::runtime_error("Incompatible tensor shape");
+        }
 
-    for (size_t i = 0; i < rhs.size_; i++) {
-        tensor.data_[i] += rhs.data_[i];
-    }
-
-    return tensor;
+        Tensor<T> tensor{lhs.shape_};
+        T scalar = lhs.data_[0];
+        for (size_t i = 0; i < lhs.size_; i++) {
+            tensor.data_[i] = lhs.data_[i] + rhs.data_[i];
+        }
+        return tensor;
+    };
 }
 
 template <typename T>
 Tensor<T> sub(const Tensor<T> &lhs, const Tensor<T> &rhs) {
-    assert(lhs.size_ == rhs.size_);
+    if (lhs.isScalar() && rhs.isScalar()) {
+        Tensor<T> tensor{};
+        tensor.data_[0] = lhs.data_[0] - rhs.data_[0];
+        return tensor;
+    } else if (rhs.isScalar()) {
+        Tensor<T> tensor{lhs.shape_};
+        T scalar = rhs.data_[0];
+        for (size_t i = 0; i < lhs.size_; i++) {
+            tensor.data_[i] = lhs.data_[i] - scalar;
+        }
+        return tensor;
+    } else if (lhs.isScalar()) {
+        Tensor<T> tensor{rhs.shape_};
+        T scalar = lhs.data_[0];
+        for (size_t i = 0; i < rhs.size_; i++) {
+            tensor.data_[i] = scalar - rhs.data_[i];
+        }
+        return tensor;
+    } else {
+        if (lhs.shape_.size() != rhs.shape_.size())
+            throw std::runtime_error("Incompatible tensor shape");
 
-    Tensor<T> tensor = lhs;
+        for (size_t i = 0; i < lhs.shape_.size(); i++) {
+            if (lhs.shape_[i] != rhs.shape_[i])
+                throw std::runtime_error("Incompatible tensor shape");
+        }
 
-    for (size_t i = 0; i < rhs.size_; i++) {
-        tensor.data_[i] -= rhs.data_[i];
+        Tensor<T> tensor{lhs.shape_};
+        T scalar = lhs.data_[0];
+        for (size_t i = 0; i < lhs.size_; i++) {
+            tensor.data_[i] = lhs.data_[i] - rhs.data_[i];
+        }
+        return tensor;
     }
-
-    return tensor;
 }
 
 template <typename T>
-Tensor<T> elementwiseMul(const Tensor<T> &lhs, const Tensor<T> &rhs) {
-    bool leftIsScalar = lhs.isScalar();
-    bool rightIsScalar = rhs.isScalar();
-
-    if (!leftIsScalar && !rightIsScalar && lhs.size_ != rhs.size_) {
-        throw std::runtime_error("Incompatible tensor sizes");
-    }
-
-    Tensor<T> tensor;
-    size_t sizeToUse;
-
-    if (lhs.size_ > rhs.size_) {
-        tensor = Tensor<T>{lhs.shape_};
-        sizeToUse = lhs.size_;
+Tensor<T> mul(const Tensor<T> &lhs, const Tensor<T> &rhs) {
+    if (lhs.isScalar() && rhs.isScalar()) {
+        Tensor<T> tensor{};
+        tensor.data_[0] = lhs.data_[0] * rhs.data_[0];
+        return tensor;
+    } else if (rhs.isScalar()) {
+        Tensor<T> tensor{lhs.shape_};
+        T scalar = rhs.data_[0];
+        for (size_t i = 0; i < lhs.size_; i++) {
+            tensor.data_[i] = lhs.data_[i] * scalar;
+        }
+        return tensor;
+    } else if (lhs.isScalar()) {
+        Tensor<T> tensor{rhs.shape_};
+        T scalar = lhs.data_[0];
+        for (size_t i = 0; i < rhs.size_; i++) {
+            tensor.data_[i] = scalar * rhs.data_[i];
+        }
+        return tensor;
     } else {
-        tensor = Tensor<T>{rhs.shape_};
-        sizeToUse = rhs.size_;
-    }
+        if (lhs.shape_.size() != rhs.shape_.size())
+            throw std::runtime_error("Incompatible tensor shape");
 
-    for (size_t i = 0; i < sizeToUse; i++) {
-        T left = leftIsScalar ? lhs.data_[0] : lhs.data_[i];
-        T right = rightIsScalar ? rhs.data_[0] : rhs.data_[i];
-        tensor.data_[i] = left * right;
-    }
+        for (size_t i = 0; i < lhs.shape_.size(); i++) {
+            if (lhs.shape_[i] != rhs.shape_[i])
+                throw std::runtime_error("Incompatible tensor shape");
+        }
 
-    return tensor;
+        Tensor<T> tensor{lhs.shape_};
+        T scalar = lhs.data_[0];
+        for (size_t i = 0; i < lhs.size_; i++) {
+            tensor.data_[i] = lhs.data_[i] * rhs.data_[i];
+        }
+        return tensor;
+    }
+}
+
+template <typename T>
+Tensor<T> elementwiseSquare(const Tensor<T> &input) {
+    if (input.isScalar()) {
+        Tensor<T> tensor{};
+        tensor.data_[0] = input.data_[0] * input.data_[0];
+        return tensor;
+    } else {
+        Tensor<T> tensor{input.shape_};
+        for (size_t i = 0; i < input.size_; i++) {
+            tensor.data_[i] = input.data_[i] * *input.data_[i];
+        }
+        return tensor;
+    }
 }
 
 template <typename T>
@@ -143,7 +216,7 @@ Tensor<T> broadcastAdd(const Tensor<T> &mat, const Tensor<T> &vec) {
 }
 
 template <typename T>
-Tensor<T> broadcastRelu(const Tensor<T> &tensor) {
+Tensor<T> relu(const Tensor<T> &tensor) {
     Tensor<T> newTensor = tensor;
 
     for (size_t i = 0; i < newTensor.size_; i++) {
@@ -160,7 +233,7 @@ Tensor<T> broadcastRelu(const Tensor<T> &tensor) {
 }
 
 template <typename T>
-Tensor<T> broadcastReluDeriv(const Tensor<T> &tensor) {
+Tensor<T> reluDeriv(const Tensor<T> &tensor) {
     Tensor<T> newTensor = tensor;
 
     for (size_t i = 0; i < newTensor.size_; i++) {
