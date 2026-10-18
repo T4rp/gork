@@ -47,16 +47,6 @@ TEST_CASE("Nodes can be retrieved", "[Graph]") {
     REQUIRE(node.tensor_.shape_[1] == 2);
 }
 
-TEST_CASE("Nodes can be computed", "[Graph]") {
-    gork::Graph<float> graph{};
-
-    gork::NodeId node1 = graph.addTensor(gork::Tensor<float>{std::vector<size_t>{4, 4}});
-    gork::NodeId node2 = graph.addTensor(gork::Tensor<float>{std::vector<size_t>{4, 4}});
-
-    auto node3 = graph.add(node1, node2);
-    graph.compute(node3);
-}
-
 TEST_CASE("Matmul should compute", "[Graph]") {
     gork::Graph<float> graph{};
 

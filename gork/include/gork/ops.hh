@@ -13,12 +13,13 @@ enum class TensorOp {
     NoOp,
     Input,
     Matmul,
+    Transpose,
     Add,
     Sub,
     BroadcastAdd,
     Relu,
     ReluDeriv,
-
+    ElementWiseMul,
     ElementWiseSquare,
 
     Reduce,
@@ -94,7 +95,7 @@ Tensor<T> sub(const Tensor<T> &lhs, const Tensor<T> &rhs) {
 }
 
 template <typename T>
-Tensor<T> mul_elementwise(const Tensor<T> &lhs, const Tensor<T> &rhs) {
+Tensor<T> elementwiseMul(const Tensor<T> &lhs, const Tensor<T> &rhs) {
     bool leftIsScalar = lhs.isScalar();
     bool rightIsScalar = rhs.isScalar();
 

@@ -161,7 +161,7 @@ Tensor<T> &Graph<T>::compute(NodeId toCompute) {
         case TensorOp::Sub: {
             Node &child0 = get(node.inputs_[0]);
             Node &child1 = get(node.inputs_[1]);
-            node.tensor_ = gork::add(child0.tensor_, child1.tensor_);
+            node.tensor_ = gork::sub(child0.tensor_, child1.tensor_);
             break;
         }
         case TensorOp::BroadcastAdd: {
@@ -237,7 +237,7 @@ void Graph<T>::backwards(NodeId toCompute) {
             Node &inNode0 = get(outNode.inputs_[0]);
 
             inNode0.gradient_ =
-                gork::mul_elementwise(gork::broadcastReluDeriv(inNode0.tensor_), outNode.gradient_);
+                gork::elementwiseMul(gork::broadcastReluDeriv(inNode0.tensor_), outNode.gradient_);
 
             break;
         }
