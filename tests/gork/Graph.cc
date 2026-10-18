@@ -3,19 +3,19 @@
 #include <catch2/catch_test_macros.hpp>
 #include <vector>
 
-TEST_CASE("Graphs can be made", "[graph]") {
+TEST_CASE("Graphs can be made", "[Graph]") {
     gork::Graph<float> graph{};
     REQUIRE(graph.getNodes().size() == 0);
 }
 
-TEST_CASE("Nodes can be inserted", "[graph]") {
+TEST_CASE("Nodes can be inserted", "[Graph]") {
     gork::Graph<float> graph{};
 
     graph.addInput(gork::Tensor<float>{std::vector<size_t>{4, 4}});
     REQUIRE(graph.getNodes().size() == 1);
 }
 
-TEST_CASE("Nodes can be multiplied", "[graph]") {
+TEST_CASE("Nodes can be multiplied", "[Graph]") {
     gork::Graph<float> graph{};
 
     gork::NodeId node1 = graph.addTensor(gork::Tensor<float>{std::vector<size_t>{4, 4}});
@@ -26,7 +26,7 @@ TEST_CASE("Nodes can be multiplied", "[graph]") {
     REQUIRE(graph.getNodes().size() == 3);
 }
 
-TEST_CASE("Nodes can be added", "[graph]") {
+TEST_CASE("Nodes can be added", "[Graph]") {
     gork::Graph<float> graph{};
 
     gork::NodeId node1 = graph.addTensor(gork::Tensor<float>{std::vector<size_t>{4, 4}});
@@ -37,7 +37,7 @@ TEST_CASE("Nodes can be added", "[graph]") {
     REQUIRE(graph.getNodes().size() == 3);
 }
 
-TEST_CASE("Nodes can be retrieved", "[graph]") {
+TEST_CASE("Nodes can be retrieved", "[Graph]") {
     gork::Graph<float> graph{};
 
     gork::NodeId node1 = graph.addTensor(gork::Tensor<float>{std::vector<size_t>{4, 2}});
@@ -47,7 +47,7 @@ TEST_CASE("Nodes can be retrieved", "[graph]") {
     REQUIRE(node.tensor_.shape_[1] == 2);
 }
 
-TEST_CASE("Nodes can be computed", "[graph]") {
+TEST_CASE("Nodes can be computed", "[Graph]") {
     gork::Graph<float> graph{};
 
     gork::NodeId node1 = graph.addTensor(gork::Tensor<float>{std::vector<size_t>{4, 4}});
@@ -57,7 +57,7 @@ TEST_CASE("Nodes can be computed", "[graph]") {
     graph.compute(node3);
 }
 
-TEST_CASE("Matmul should compute", "[graph]") {
+TEST_CASE("Matmul should compute", "[Graph]") {
     gork::Graph<float> graph{};
 
     gork::Tensor<float> tensor1{std::vector<size_t>{1, 4}};
@@ -90,7 +90,7 @@ TEST_CASE("Matmul should compute", "[graph]") {
     REQUIRE(result.at({0, 1}) == 10);
 }
 
-TEST_CASE("Add should compute", "[graph]") {
+TEST_CASE("Add should compute", "[Graph]") {
     gork::Graph<float> graph{};
 
     gork::Tensor<float> tensor1{std::vector<size_t>{2, 2}};
@@ -118,7 +118,7 @@ TEST_CASE("Add should compute", "[graph]") {
     REQUIRE(result.at({1, 1}) == 8);
 }
 
-TEST_CASE("BroadcastAdd should compute", "[graph]") {
+TEST_CASE("BroadcastAdd should compute", "[Graph]") {
     gork::Graph<float> graph{};
 
     gork::Tensor<float> tensor1{std::vector<size_t>{2, 2}};
@@ -144,7 +144,7 @@ TEST_CASE("BroadcastAdd should compute", "[graph]") {
     REQUIRE(result.at({1, 1}) == 12);
 }
 
-TEST_CASE("Relu should compute", "[graph]") {
+TEST_CASE("Relu should compute", "[Graph]") {
     gork::Graph<float> graph{};
 
     gork::Tensor<float> tensor1{std::vector<size_t>{2, 3}};
@@ -165,7 +165,7 @@ TEST_CASE("Relu should compute", "[graph]") {
     REQUIRE(result.at({1, 1}) == 0);
 }
 
-TEST_CASE("Relu backwards should compute", "[graph]") {
+TEST_CASE("Relu backwards should compute", "[Graph]") {
     gork::Graph<float> graph{};
 
     gork::Tensor<float> tensor1{std::vector<size_t>{2, 3}};

@@ -4,19 +4,19 @@
 #include <sstream>
 #include <vector>
 
-TEST_CASE("Tensors can be made", "[tensor]") {
+TEST_CASE("Tensors can be made", "[Tensor]") {
     std::vector<size_t> shape{256, 128};
     gork::Tensor<float> tensor{shape};
 }
 
-TEST_CASE("Tensors values can be set", "[tensor]") {
+TEST_CASE("Tensors values can be set", "[Tensor]") {
     std::vector<size_t> shape{256, 128};
     gork::Tensor<float> tensor{shape};
     tensor.at({100, 200}) = 4.0;
     REQUIRE(tensor.at({100, 200}) == 4.0);
 }
 
-TEST_CASE("Tensors can be dumped", "[tensor]") {
+TEST_CASE("Tensors can be dumped", "[Tensor]") {
     std::vector<size_t> shape{2, 2};
     gork::Tensor<float> tensor{shape};
     tensor.at({0, 0}) = 1;
@@ -33,7 +33,7 @@ TEST_CASE("Tensors can be dumped", "[tensor]") {
     std::cout.rdbuf(old_buffer);
 }
 
-TEST_CASE("Tensors can work as scalars", "[tensor]") {
+TEST_CASE("Tensors can work as scalars", "[Tensor]") {
     gork::Tensor<float> tensor{std::vector<size_t>{}};
     tensor.at({}) = 20.0;
 
