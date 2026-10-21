@@ -44,8 +44,8 @@ class Graph {
     Graph()
         : nodes_{} {}
 
-    NodeId addInput(Tensor<T> &&tensor);
-    NodeId addTensor(Tensor<T> &&tensor);
+    NodeId addInput(Tensor<T> tensor);
+    NodeId addTensor(Tensor<T> tensor);
     Node &get(NodeId id);
     const std::vector<Node> &getNodes() const;
 
@@ -80,13 +80,13 @@ Graph<T>::Node::Node(Tensor<T> tensor, TensorOp op, std::vector<NodeId> inputs)
       inputs_{std::move(inputs)} {}
 
 template <typename T>
-NodeId Graph<T>::addInput(Tensor<T> &&tensor) {
+NodeId Graph<T>::addInput(Tensor<T> tensor) {
     nodes_.emplace_back(std::move(tensor), TensorOp::Input);
     return nodes_.size() - 1;
 }
 
 template <typename T>
-NodeId Graph<T>::addTensor(Tensor<T> &&tensor) {
+NodeId Graph<T>::addTensor(Tensor<T> tensor) {
     nodes_.emplace_back(std::move(tensor), TensorOp::NoOp);
     return nodes_.size() - 1;
 }
