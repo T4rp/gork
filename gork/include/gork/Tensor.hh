@@ -36,7 +36,8 @@ class Tensor {
 };
 
 template <typename T>
-Tensor<T>::Tensor() {}
+Tensor<T>::Tensor()
+    : data_(nullptr) {}
 
 template <typename T>
 Tensor<T>::Tensor(const std::vector<size_t> &shape)

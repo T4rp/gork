@@ -49,10 +49,13 @@ class Graph {
     Node &get(NodeId id);
     const std::vector<Node> &getNodes() const;
 
+    NodeId noOp(NodeId tensor);
     NodeId matmul(NodeId lhs, NodeId rhs);
+    NodeId transpose(NodeId tensor);
     NodeId broadcastAdd(NodeId lhs, NodeId rhs);
     NodeId add(NodeId lhs, NodeId rhs);
     NodeId relu(NodeId tensor);
+    NodeId reluDeriv(NodeId tensor);
 
     Tensor<T> &compute(NodeId toCompute);
 
@@ -66,13 +69,13 @@ class Graph {
 template <typename T>
 Graph<T>::Node::Node(Tensor<T> tensor, TensorOp op)
     : tensor_{std::move(tensor)},
-      gradient_{std::vector<size_t>{0}},
+      gradient_{},
       op_{op} {}
 
 template <typename T>
 Graph<T>::Node::Node(Tensor<T> tensor, TensorOp op, std::vector<NodeId> inputs)
     : tensor_{std::move(tensor)},
-      gradient_{std::vector<size_t>{0}},
+      gradient_{},
       op_{op},
       inputs_{std::move(inputs)} {}
 
@@ -89,12 +92,32 @@ NodeId Graph<T>::addTensor(Tensor<T> &&tensor) {
 }
 
 template <typename T>
+NodeId Graph<T>::noOp(NodeId tensor) {
+    Node &node = nodes_[tensor];
+
+    Tensor<T> result{};
+    nodes_.emplace_back(std::move(result), TensorOp::Matmul, std::vector<NodeId>{tensor});
+
+    return nodes_.size() - 1;
+}
+
+template <typename T>
 NodeId Graph<T>::matmul(NodeId lhs, NodeId rhs) {
     Node &rightNode = nodes_[rhs];
     Node &leftNode = nodes_[lhs];
 
-    Tensor<T> result{std::vector{leftNode.tensor_.shape_[0], rightNode.tensor_.shape_[1]}};
+    Tensor<T> result{};
     nodes_.emplace_back(std::move(result), TensorOp::Matmul, std::vector<NodeId>{lhs, rhs});
+
+    return nodes_.size() - 1;
+}
+
+template <typename T>
+NodeId Graph<T>::transpose(NodeId tensor) {
+    Node &node = nodes_[tensor];
+
+    Tensor<T> result{};
+    nodes_.emplace_back(std::move(result), TensorOp::Transpose, std::vector<NodeId>{tensor});
 
     return nodes_.size() - 1;
 }
@@ -104,7 +127,7 @@ NodeId Graph<T>::broadcastAdd(NodeId lhs, NodeId rhs) {
     Node &rightNode = nodes_[rhs];
     Node &leftNode = nodes_[lhs];
 
-    Tensor<T> result{std::vector{leftNode.tensor_.shape_[0], leftNode.tensor_.shape_[1]}};
+    Tensor<T> result{};
     nodes_.emplace_back(std::move(result), TensorOp::BroadcastAdd, std::vector<NodeId>{lhs, rhs});
 
     return nodes_.size() - 1;
@@ -114,7 +137,7 @@ template <typename T>
 NodeId Graph<T>::add(NodeId lhs, NodeId rhs) {
     Node &leftNode = nodes_[lhs];
 
-    Tensor<T> result{std::vector{leftNode.tensor_.shape_[0], leftNode.tensor_.shape_[1]}};
+    Tensor<T> result{};
     nodes_.emplace_back(std::move(result), TensorOp::Add, std::vector<NodeId>{lhs, rhs});
 
     return nodes_.size() - 1;
@@ -124,8 +147,18 @@ template <typename T>
 NodeId Graph<T>::relu(NodeId nodeId) {
     Node &node = nodes_[nodeId];
 
-    Tensor<T> result{std::vector{node.tensor_.shape_[0], node.tensor_.shape_[1]}};
+    Tensor<T> result{};
     nodes_.emplace_back(std::move(result), TensorOp::Relu, std::vector<NodeId>{nodeId});
+
+    return nodes_.size() - 1;
+};
+
+template <typename T>
+NodeId Graph<T>::reluDeriv(NodeId nodeId) {
+    Node &node = nodes_[nodeId];
+
+    Tensor<T> result{};
+    nodes_.emplace_back(std::move(result), TensorOp::ReluDeriv, std::vector<NodeId>{nodeId});
 
     return nodes_.size() - 1;
 };
@@ -251,8 +284,7 @@ void Graph<T>::backwards(NodeId toCompute) {
         case TensorOp::Relu: {
             Node &inNode0 = get(outNode.inputs_[0]);
 
-            inNode0.gradient_ =
-                gork::mul(gork::reluDeriv(inNode0.tensor_), outNode.gradient_);
+            inNode0.gradient_ = gork::mul(gork::reluDeriv(inNode0.tensor_), outNode.gradient_);
 
             break;
         }
@@ -263,6 +295,73 @@ void Graph<T>::backwards(NodeId toCompute) {
 template <typename T>
 typename Graph<T>::BackwardsGraphResult Graph<T>::buildBackwardsGraph(NodeId toCompute) {
     BackwardsGraphResult result{};
+
+    std::vector<NodeId> dependencies{};
+    std::vector<NodeId> stack{};
+
+    stack.push_back(toCompute);
+
+    while (stack.size() > 0) {
+        NodeId nodeId = stack.back();
+        stack.pop_back();
+
+        dependencies.push_back(nodeId);
+
+        Node &node = get(nodeId);
+
+        for (NodeId parentId : node.inputs_) {
+            stack.push_back(parentId);
+        }
+    }
+
+    std::reverse(std::begin(dependencies), std::end(dependencies));
+
+    Node &resultNode = get(toCompute);
+
+    auto intialGradient = result.graph.addTensor(Tensor<T>{});
+    get(intialGradient).tensor_.at({}) = 1.0;
+
+    result.nodeMap[toCompute] = intialGradient;
+
+    for (size_t i = dependencies.size(); i--;) {
+        NodeId nodeId = dependencies[i];
+        Node &outNode = get(nodeId);
+
+        switch (outNode.op_) {
+        case TensorOp::Add:
+        case TensorOp::BroadcastAdd: {
+            NodeId inode0 = outNode.inputs_[0];
+            NodeId inode1 = outNode.inputs_[1];
+
+            auto grad0 = noOp(nodeId);
+            auto grad1 = noOp(nodeId);
+
+            result.nodeMap[inode0] = grad0;
+            result.nodeMap[inode1] = grad1;
+
+            break;
+        }
+        case TensorOp::Matmul: {
+            NodeId inode0 = outNode.inputs_[0];
+            NodeId inode1 = outNode.inputs_[1];
+
+            auto grad0 = matmul(outNode, transpose(inode1));
+            auto grad1 = matmul(transpose(inode0), outNode);
+
+            result.nodeMap[inode0] = grad0;
+            result.nodeMap[inode1] = grad1;
+
+            break;
+        }
+        case TensorOp::Relu: {
+            NodeId inode0 = outNode.inputs_[0];
+
+            auto grad0 = mul(reluDeriv(inode0), outNode);
+
+            result.nodeMap[inode0] = grad0;
+        }
+        }
+    }
 
     return result;
 }

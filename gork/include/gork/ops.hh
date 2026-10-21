@@ -190,7 +190,7 @@ Tensor<T> elementwiseSquare(const Tensor<T> &input) {
     } else {
         Tensor<T> tensor{input.shape_};
         for (size_t i = 0; i < input.size_; i++) {
-            tensor.data_[i] = input.data_[i] * *input.data_[i];
+            tensor.data_[i] = input.data_[i] * input.data_[i];
         }
         return tensor;
     }
