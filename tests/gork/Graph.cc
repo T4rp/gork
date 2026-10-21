@@ -18,8 +18,8 @@ TEST_CASE("Nodes can be inserted", "[Graph]") {
 TEST_CASE("Nodes can be multiplied", "[Graph]") {
     gork::Graph<float> graph{};
 
-    gork::NodeId node1 = graph.addTensor(gork::Tensor<float>{std::vector<size_t>{4, 4}});
-    gork::NodeId node2 = graph.addTensor(gork::Tensor<float>{std::vector<size_t>{4, 3}});
+    gork::NodeId node1 = graph.addInput(gork::Tensor<float>{std::vector<size_t>{4, 4}});
+    gork::NodeId node2 = graph.addInput(gork::Tensor<float>{std::vector<size_t>{4, 3}});
 
     graph.matmul(node1, node2);
 
@@ -29,8 +29,8 @@ TEST_CASE("Nodes can be multiplied", "[Graph]") {
 TEST_CASE("Nodes can be added", "[Graph]") {
     gork::Graph<float> graph{};
 
-    gork::NodeId node1 = graph.addTensor(gork::Tensor<float>{std::vector<size_t>{4, 4}});
-    gork::NodeId node2 = graph.addTensor(gork::Tensor<float>{std::vector<size_t>{4, 4}});
+    gork::NodeId node1 = graph.addInput(gork::Tensor<float>{std::vector<size_t>{4, 4}});
+    gork::NodeId node2 = graph.addInput(gork::Tensor<float>{std::vector<size_t>{4, 4}});
 
     graph.add(node1, node2);
 
@@ -40,7 +40,7 @@ TEST_CASE("Nodes can be added", "[Graph]") {
 TEST_CASE("Nodes can be retrieved", "[Graph]") {
     gork::Graph<float> graph{};
 
-    gork::NodeId node1 = graph.addTensor(gork::Tensor<float>{std::vector<size_t>{4, 2}});
+    gork::NodeId node1 = graph.addInput(gork::Tensor<float>{std::vector<size_t>{4, 2}});
     gork::Graph<float>::Node &node = graph.get(node1);
 
     REQUIRE(node.tensor_.shape_[0] == 4);
@@ -67,8 +67,8 @@ TEST_CASE("Matmul should compute", "[Graph]") {
     tensor2.at({2, 1}) = 1;
     tensor2.at({3, 1}) = 0;
 
-    gork::NodeId node1 = graph.addTensor(std::move(tensor1));
-    gork::NodeId node2 = graph.addTensor(std::move(tensor2));
+    gork::NodeId node1 = graph.addInput(std::move(tensor1));
+    gork::NodeId node2 = graph.addInput(std::move(tensor2));
 
     auto node3 = graph.matmul(node1, node2);
     gork::Tensor<float> &result = graph.compute(node3);
@@ -96,8 +96,8 @@ TEST_CASE("Add should compute", "[Graph]") {
     tensor2.at({0, 1}) = 5;
     tensor2.at({1, 1}) = 1;
 
-    gork::NodeId node1 = graph.addTensor(std::move(tensor1));
-    gork::NodeId node2 = graph.addTensor(std::move(tensor2));
+    gork::NodeId node1 = graph.addInput(std::move(tensor1));
+    gork::NodeId node2 = graph.addInput(std::move(tensor2));
 
     auto node3 = graph.add(node1, node2);
     gork::Tensor<float> &result = graph.compute(node3);
@@ -122,8 +122,8 @@ TEST_CASE("BroadcastAdd should compute", "[Graph]") {
     tensor2.at({0, 0}) = 1;
     tensor2.at({1, 0}) = 5;
 
-    gork::NodeId node1 = graph.addTensor(std::move(tensor1));
-    gork::NodeId node2 = graph.addTensor(std::move(tensor2));
+    gork::NodeId node1 = graph.addInput(std::move(tensor1));
+    gork::NodeId node2 = graph.addInput(std::move(tensor2));
 
     auto node3 = graph.broadcastAdd(node1, node2);
     gork::Tensor<float> &result = graph.compute(node3);
@@ -144,7 +144,7 @@ TEST_CASE("Relu should compute", "[Graph]") {
     tensor1.at({0, 1}) = -6;
     tensor1.at({1, 1}) = -7;
 
-    gork::NodeId node1 = graph.addTensor(std::move(tensor1));
+    gork::NodeId node1 = graph.addInput(std::move(tensor1));
 
     auto node2 = graph.relu(node1);
     gork::Tensor<float> &result = graph.compute(node2);
@@ -165,7 +165,7 @@ TEST_CASE("Relu backwards should compute", "[Graph]") {
     tensor1.at({1, 0}) = 7;
     tensor1.at({1, 1}) = -7;
 
-    gork::NodeId node1 = graph.addTensor(std::move(tensor1));
+    gork::NodeId node1 = graph.addInput(std::move(tensor1));
 
     auto node2 = graph.relu(node1);
     graph.backwards(node2);
