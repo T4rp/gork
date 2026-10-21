@@ -190,30 +190,30 @@ Tensor<T> &Graph<T>::compute(NodeId toCompute) {
         case TensorOp::Matmul: {
             Node &child0 = get(node.inputs_[0]);
             Node &child1 = get(node.inputs_[1]);
-            node.tensor_ = gork::matmul(child0.tensor_, child1.tensor_);
+            node.tensor_ = gork::ops::matmul(child0.tensor_, child1.tensor_);
             break;
         }
         case TensorOp::Add: {
             Node &child0 = get(node.inputs_[0]);
             Node &child1 = get(node.inputs_[1]);
-            node.tensor_ = gork::add(child0.tensor_, child1.tensor_);
+            node.tensor_ = gork::ops::add(child0.tensor_, child1.tensor_);
             break;
         }
         case TensorOp::Sub: {
             Node &child0 = get(node.inputs_[0]);
             Node &child1 = get(node.inputs_[1]);
-            node.tensor_ = gork::sub(child0.tensor_, child1.tensor_);
+            node.tensor_ = gork::ops::sub(child0.tensor_, child1.tensor_);
             break;
         }
         case TensorOp::BroadcastAdd: {
             Node &child0 = get(node.inputs_[0]);
             Node &child1 = get(node.inputs_[1]);
-            node.tensor_ = gork::broadcastAdd(child0.tensor_, child1.tensor_);
+            node.tensor_ = gork::ops::broadcastAdd(child0.tensor_, child1.tensor_);
             break;
         }
         case TensorOp::Relu: {
             Node &child0 = get(node.inputs_[0]);
-            node.tensor_ = gork::relu(child0.tensor_);
+            node.tensor_ = gork::ops::relu(child0.tensor_);
             break;
         }
         }
@@ -269,15 +269,15 @@ void Graph<T>::backwards(NodeId toCompute) {
             Node &inNode0 = get(outNode.inputs_[0]);
             Node &inNode1 = get(outNode.inputs_[1]);
 
-            inNode0.gradient_ = gork::matmul(outNode.gradient_, gork::transpose(inNode1.tensor_));
-            inNode1.gradient_ = gork::matmul(gork::transpose(inNode0.tensor_), outNode.gradient_);
+            inNode0.gradient_ = gork::ops::matmul(outNode.gradient_, gork::ops::transpose(inNode1.tensor_));
+            inNode1.gradient_ = gork::ops::matmul(gork::ops::transpose(inNode0.tensor_), outNode.gradient_);
 
             break;
         }
         case TensorOp::Relu: {
             Node &inNode0 = get(outNode.inputs_[0]);
 
-            inNode0.gradient_ = gork::mul(gork::reluDeriv(inNode0.tensor_), outNode.gradient_);
+            inNode0.gradient_ = gork::ops::mul(gork::ops::reluDeriv(inNode0.tensor_), outNode.gradient_);
 
             break;
         }

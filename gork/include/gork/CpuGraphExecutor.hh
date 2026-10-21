@@ -69,51 +69,51 @@ void CpuGraphExecutor<T>::compute(NodeId lastNodeId) {
         case TensorOp::Matmul: {
             auto &child0 = graph_->get(node.inputs_[0]);
             auto &child1 = graph_->get(node.inputs_[1]);
-            node.tensor_ = gork::matmul(child0.tensor_, child1.tensor_);
+            node.tensor_ = gork::ops::matmul(child0.tensor_, child1.tensor_);
             break;
         }
         case TensorOp::Transpose: {
             auto &child0 = graph_->get(node.inputs_[0]);
-            node.tensor_ = gork::transpose(child0.tensor_);
+            node.tensor_ = gork::ops::transpose(child0.tensor_);
             break;
         }
         case TensorOp::Add: {
             auto &child0 = graph_->get(node.inputs_[0]);
             auto &child1 = graph_->get(node.inputs_[1]);
-            node.tensor_ = gork::add(child0.tensor_, child1.tensor_);
+            node.tensor_ = gork::ops::add(child0.tensor_, child1.tensor_);
             break;
         }
         case TensorOp::Sub: {
             auto &child0 = graph_->get(node.inputs_[0]);
             auto &child1 = graph_->get(node.inputs_[1]);
-            node.tensor_ = gork::sub(child0.tensor_, child1.tensor_);
+            node.tensor_ = gork::ops::sub(child0.tensor_, child1.tensor_);
             break;
         }
         case TensorOp::Mul: {
             auto &child0 = graph_->get(node.inputs_[0]);
             auto &child1 = graph_->get(node.inputs_[1]);
-            node.tensor_ = gork::mul(child0.tensor_, child1.tensor_);
+            node.tensor_ = gork::ops::mul(child0.tensor_, child1.tensor_);
             break;
         }
         case TensorOp::ElementwiseSquare: {
             auto &child0 = graph_->get(node.inputs_[0]);
-            node.tensor_ = gork::elementwiseSquare(child0.tensor_);
+            node.tensor_ = gork::ops::elementwiseSquare(child0.tensor_);
             break;
         }
         case TensorOp::BroadcastAdd: {
             auto &child0 = graph_->get(node.inputs_[0]);
             auto &child1 = graph_->get(node.inputs_[1]);
-            node.tensor_ = gork::broadcastAdd(child0.tensor_, child1.tensor_);
+            node.tensor_ = gork::ops::broadcastAdd(child0.tensor_, child1.tensor_);
             break;
         }
         case TensorOp::Relu: {
             auto &child0 = graph_->get(node.inputs_[0]);
-            node.tensor_ = gork::relu(child0.tensor_);
+            node.tensor_ = gork::ops::relu(child0.tensor_);
             break;
         }
         case TensorOp::ReluDeriv: {
             auto &child0 = graph_->get(node.inputs_[0]);
-            node.tensor_ = gork::reluDeriv(child0.tensor_);
+            node.tensor_ = gork::ops::reluDeriv(child0.tensor_);
             break;
         }
         }

@@ -25,6 +25,8 @@ enum class TensorOp {
     Reduce,
 };
 
+namespace ops {
+
 // TODO: support multiple dimensions
 template <typename T>
 Tensor<T> matmul(const Tensor<T> &a, const Tensor<T> &b) {
@@ -248,6 +250,8 @@ Tensor<T> reluDeriv(const Tensor<T> &tensor) {
 
     return newTensor;
 }
+
+} // namespace ops
 
 } // namespace gork
 
