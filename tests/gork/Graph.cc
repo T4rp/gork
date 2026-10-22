@@ -15,6 +15,26 @@ TEST_CASE("Nodes can be inserted", "[Graph]") {
     REQUIRE(graph.getNodes().size() == 1);
 }
 
+TEST_CASE("Graph inputs are recorded", "[Graph]") {
+    gork::Graph<float> graph{};
+
+    auto nodeId = graph.addInput({});
+    auto &node = graph.get(nodeId);
+
+    REQUIRE(nodeId == graph.inputs_[0]);
+}
+
+TEST_CASE("Graph outputs are recorded", "[Graph]") {
+    gork::Graph<float> graph{};
+
+    auto inputId = graph.addInput({});
+    auto outputId = graph.output(inputId);
+
+    auto &node = graph.get(outputId);
+
+    REQUIRE(outputId == graph.outputs_[0]);
+}
+
 TEST_CASE("Nodes can be multiplied", "[Graph]") {
     gork::Graph<float> graph{};
 

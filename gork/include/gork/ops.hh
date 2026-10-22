@@ -12,6 +12,7 @@ namespace gork {
 enum class TensorOp {
     NoOp,
     Input,
+    Output,
     Matmul,
     Transpose,
     Add,

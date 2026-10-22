@@ -18,6 +18,7 @@ class Graph {
     class Node {
       public:
         TensorOp op_;
+        size_t paramIndex_;
 
         Tensor<T> tensor_;
         Tensor<T> gradient_;
@@ -41,13 +42,19 @@ class Graph {
         std::unordered_map<NodeId, NodeId> nodeMap;
     };
 
+    std::vector<NodeId> inputs_;
+    std::vector<NodeId> outputs_;
+
     Graph()
-        : nodes_{} {}
+        : nodes_{},
+          inputs_{},
+          outputs_{} {}
 
     NodeId addInput(Tensor<T> tensor);
     Node &get(NodeId id);
     const std::vector<Node> &getNodes() const;
 
+    NodeId output(NodeId nodeId);
     NodeId noOp(NodeId tensor);
     NodeId matmul(NodeId lhs, NodeId rhs);
     NodeId transpose(NodeId tensor);
@@ -80,8 +87,30 @@ Graph<T>::Node::Node(Tensor<T> tensor, TensorOp op, std::vector<NodeId> inputs)
 
 template <typename T>
 NodeId Graph<T>::addInput(Tensor<T> tensor) {
+    NodeId nextNodeId = nodes_.size();
+    NodeId nextInputParamIndex = inputs_.size();
+
     nodes_.emplace_back(std::move(tensor), TensorOp::Input);
-    return nodes_.size() - 1;
+
+    auto &backNode = nodes_.back();
+    backNode.paramIndex_ = nextInputParamIndex;
+    inputs_.push_back(nextNodeId);
+
+    return nextNodeId;
+}
+
+template <typename T>
+NodeId Graph<T>::output(NodeId nodeId) {
+    NodeId nextNodeId = nodes_.size();
+    NodeId nextOutputParamIndex = outputs_.size();
+
+    nodes_.emplace_back(Tensor<T>{}, TensorOp::Output, std::vector<NodeId>{nodeId});
+
+    auto &backNode = nodes_.back();
+    backNode.paramIndex_ = nextOutputParamIndex;
+    outputs_.push_back(nextNodeId);
+
+    return nextNodeId;
 }
 
 template <typename T>
@@ -269,15 +298,18 @@ void Graph<T>::backwards(NodeId toCompute) {
             Node &inNode0 = get(outNode.inputs_[0]);
             Node &inNode1 = get(outNode.inputs_[1]);
 
-            inNode0.gradient_ = gork::ops::matmul(outNode.gradient_, gork::ops::transpose(inNode1.tensor_));
-            inNode1.gradient_ = gork::ops::matmul(gork::ops::transpose(inNode0.tensor_), outNode.gradient_);
+            inNode0.gradient_ =
+                gork::ops::matmul(outNode.gradient_, gork::ops::transpose(inNode1.tensor_));
+            inNode1.gradient_ =
+                gork::ops::matmul(gork::ops::transpose(inNode0.tensor_), outNode.gradient_);
 
             break;
         }
         case TensorOp::Relu: {
             Node &inNode0 = get(outNode.inputs_[0]);
 
-            inNode0.gradient_ = gork::ops::mul(gork::ops::reluDeriv(inNode0.tensor_), outNode.gradient_);
+            inNode0.gradient_ =
+                gork::ops::mul(gork::ops::reluDeriv(inNode0.tensor_), outNode.gradient_);
 
             break;
         }
