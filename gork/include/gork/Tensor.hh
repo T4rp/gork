@@ -61,9 +61,12 @@ template <typename T>
 Tensor<T>::Tensor(const Tensor<T> &rhs)
     : size_{rhs.size_},
       shape_{rhs.shape_},
-      strides_{rhs.strides_} {
-    data_ = new T[size_];
-    std::copy(rhs.data_, rhs.data_ + size_, data_);
+      strides_{rhs.strides_},
+      data_{nullptr} {
+    if (rhs.data_ != nullptr) {
+        data_ = new T[size_];
+        std::copy(rhs.data_, rhs.data_ + size_, data_);
+    }
 }
 
 template <typename T>
