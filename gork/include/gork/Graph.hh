@@ -98,7 +98,7 @@ NodeId Graph<T>::output(NodeId nodeId) {
     NodeId nextNodeId = nodes_.size();
     NodeId nextOutputParamIndex = outputs_.size();
 
-    nodes_.emplace_back(Tensor<T>{}, TensorOp::Output, std::vector<NodeId>{nodeId});
+    nodes_.emplace_back(TensorOp::Output, std::vector<NodeId>{nodeId});
 
     auto &backNode = nodes_.back();
     backNode.paramIndex_ = nextOutputParamIndex;
@@ -111,8 +111,7 @@ template <typename T>
 NodeId Graph<T>::noOp(NodeId tensor) {
     Node &node = nodes_[tensor];
 
-    Tensor<T> result{};
-    nodes_.emplace_back(std::move(result), TensorOp::Matmul, std::vector<NodeId>{tensor});
+    nodes_.emplace_back(TensorOp::NoOp, std::vector<NodeId>{tensor});
 
     return nodes_.size() - 1;
 }
@@ -122,8 +121,7 @@ NodeId Graph<T>::matmul(NodeId lhs, NodeId rhs) {
     Node &rightNode = nodes_[rhs];
     Node &leftNode = nodes_[lhs];
 
-    Tensor<T> result{};
-    nodes_.emplace_back(std::move(result), TensorOp::Matmul, std::vector<NodeId>{lhs, rhs});
+    nodes_.emplace_back(TensorOp::Matmul, std::vector<NodeId>{lhs, rhs});
 
     return nodes_.size() - 1;
 }
@@ -133,7 +131,7 @@ NodeId Graph<T>::transpose(NodeId tensor) {
     Node &node = nodes_[tensor];
 
     Tensor<T> result{};
-    nodes_.emplace_back(std::move(result), TensorOp::Transpose, std::vector<NodeId>{tensor});
+    nodes_.emplace_back(TensorOp::Transpose, std::vector<NodeId>{tensor});
 
     return nodes_.size() - 1;
 }
@@ -143,8 +141,7 @@ NodeId Graph<T>::broadcastAdd(NodeId lhs, NodeId rhs) {
     Node &rightNode = nodes_[rhs];
     Node &leftNode = nodes_[lhs];
 
-    Tensor<T> result{};
-    nodes_.emplace_back(std::move(result), TensorOp::BroadcastAdd, std::vector<NodeId>{lhs, rhs});
+    nodes_.emplace_back(TensorOp::BroadcastAdd, std::vector<NodeId>{lhs, rhs});
 
     return nodes_.size() - 1;
 };
@@ -153,8 +150,7 @@ template <typename T>
 NodeId Graph<T>::add(NodeId lhs, NodeId rhs) {
     Node &leftNode = nodes_[lhs];
 
-    Tensor<T> result{};
-    nodes_.emplace_back(std::move(result), TensorOp::Add, std::vector<NodeId>{lhs, rhs});
+    nodes_.emplace_back(TensorOp::Add, std::vector<NodeId>{lhs, rhs});
 
     return nodes_.size() - 1;
 }
@@ -164,7 +160,7 @@ NodeId Graph<T>::relu(NodeId nodeId) {
     Node &node = nodes_[nodeId];
 
     Tensor<T> result{};
-    nodes_.emplace_back(std::move(result), TensorOp::Relu, std::vector<NodeId>{nodeId});
+    nodes_.emplace_back(TensorOp::Relu, std::vector<NodeId>{nodeId});
 
     return nodes_.size() - 1;
 };
@@ -173,8 +169,7 @@ template <typename T>
 NodeId Graph<T>::reluDeriv(NodeId nodeId) {
     Node &node = nodes_[nodeId];
 
-    Tensor<T> result{};
-    nodes_.emplace_back(std::move(result), TensorOp::ReluDeriv, std::vector<NodeId>{nodeId});
+    nodes_.emplace_back(TensorOp::ReluDeriv, std::vector<NodeId>{nodeId});
 
     return nodes_.size() - 1;
 };
