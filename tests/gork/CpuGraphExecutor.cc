@@ -32,8 +32,8 @@ TEST_CASE("It should compute matmul", "[CpuGraphExecutor]") {
     tensor2.at({2, 1}) = 1;
     tensor2.at({3, 1}) = 0;
 
-    gork::NodeId node1 = graph.addInput(std::move(tensor1));
-    gork::NodeId node2 = graph.addInput(std::move(tensor2));
+    gork::NodeId node1 = graph.input(std::move(tensor1));
+    gork::NodeId node2 = graph.input(std::move(tensor2));
 
     auto node3 = graph.matmul(node1, node2);
     executor.compute(node3);
@@ -65,8 +65,8 @@ TEST_CASE("It should compute add", "[CpuGraphExecutor]") {
     tensor2.at({0, 1}) = 5;
     tensor2.at({1, 1}) = 1;
 
-    gork::NodeId node1 = graph.addInput(std::move(tensor1));
-    gork::NodeId node2 = graph.addInput(std::move(tensor2));
+    gork::NodeId node1 = graph.input(std::move(tensor1));
+    gork::NodeId node2 = graph.input(std::move(tensor2));
 
     auto node3 = graph.add(node1, node2);
     executor.compute(node3);
@@ -95,8 +95,8 @@ TEST_CASE("It should compute BroadcastAdd", "[CpuGraphExecutor]") {
     tensor2.at({0, 0}) = 1;
     tensor2.at({1, 0}) = 5;
 
-    gork::NodeId node1 = graph.addInput(std::move(tensor1));
-    gork::NodeId node2 = graph.addInput(std::move(tensor2));
+    gork::NodeId node1 = graph.input(std::move(tensor1));
+    gork::NodeId node2 = graph.input(std::move(tensor2));
 
     auto node3 = graph.broadcastAdd(node1, node2);
     executor.compute(node3);
@@ -121,7 +121,7 @@ TEST_CASE("It should compute Relu", "[CpuGraphExecutor]") {
     tensor1.at({0, 1}) = -6;
     tensor1.at({1, 1}) = -7;
 
-    gork::NodeId node1 = graph.addInput(std::move(tensor1));
+    gork::NodeId node1 = graph.input(std::move(tensor1));
 
     auto node2 = graph.relu(node1);
     executor.compute(node2);

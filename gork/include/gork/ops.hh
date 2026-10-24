@@ -13,6 +13,7 @@ enum class TensorOp {
     NoOp,
     Input,
     Output,
+    Constant,
     Matmul,
     Transpose,
     Add,

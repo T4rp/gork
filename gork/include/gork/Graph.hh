@@ -50,10 +50,11 @@ class Graph {
           inputs_{},
           outputs_{} {}
 
-    NodeId addInput(Tensor<T> tensor);
+    NodeId input(Tensor<T> tensor);
     Node &get(NodeId id);
     const std::vector<Node> &getNodes() const;
 
+    NodeId constant(Tensor<T> tensor);
     NodeId output(NodeId nodeId);
     NodeId noOp(NodeId tensor);
     NodeId matmul(NodeId lhs, NodeId rhs);
@@ -86,7 +87,7 @@ Graph<T>::Node::Node(Tensor<T> tensor, TensorOp op, std::vector<NodeId> inputs)
       inputs_{std::move(inputs)} {}
 
 template <typename T>
-NodeId Graph<T>::addInput(Tensor<T> tensor) {
+NodeId Graph<T>::input(Tensor<T> tensor) {
     NodeId nextNodeId = nodes_.size();
     NodeId nextInputParamIndex = inputs_.size();
 
@@ -95,6 +96,14 @@ NodeId Graph<T>::addInput(Tensor<T> tensor) {
     auto &backNode = nodes_.back();
     backNode.paramIndex_ = nextInputParamIndex;
     inputs_.push_back(nextNodeId);
+
+    return nextNodeId;
+}
+
+template <typename T>
+NodeId Graph<T>::constant(Tensor<T> tensor) {
+    NodeId nextNodeId = nodes_.size();
+    nodes_.emplace_back(std::move(tensor), TensorOp::Constant);
 
     return nextNodeId;
 }
