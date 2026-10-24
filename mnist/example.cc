@@ -10,7 +10,6 @@
 #include <vector>
 #include <zlib.h>
 
-
 std::vector<uint8_t> ungzFile(std::string_view path) {
     std::vector<uint8_t> unzipped{};
 

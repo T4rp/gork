@@ -1,5 +1,4 @@
 #include "gork/Graph.hh"
-#include "gork/Tensor.hh"
 #include "gork/ops.hh"
 #include <catch2/catch_test_macros.hpp>
 #include <vector>
@@ -66,4 +65,3 @@ TEST_CASE("Nodes can be retrieved", "[Graph]") {
 
     REQUIRE(node.op_ == gork::TensorOp::Input);
 }
-
