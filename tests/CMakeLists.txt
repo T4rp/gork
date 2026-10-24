@@ -4,6 +4,7 @@ add_executable(tests
     gork/Graph.cc
     gork/Tensor.cc
     gork/CpuGraphExecutor.cc
+    gork/ops.cc
 )
 
 target_link_libraries(tests

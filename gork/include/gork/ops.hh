@@ -23,8 +23,8 @@ enum class TensorOp {
     Relu,
     ReluDeriv,
     Negate,
-    VBroadcast,
-    VReduce,
+    HBroadcast,
+    HReduce,
 };
 
 namespace ops {
@@ -259,6 +259,34 @@ Tensor<T> negate(const Tensor<T> &tensor) {
 
     for (size_t i = 0; i < newTensor.size_; i++) {
         newTensor.data_[i] *= -1;
+    }
+
+    return newTensor;
+}
+
+template <typename T>
+Tensor<T> hBroadcast(const Tensor<T> &tensor, size_t count) {
+    Tensor<T> newTensor{std::vector<size_t>{tensor.shape_[0], count}};
+
+    for (size_t j = 0; j < newTensor.shape_[1]; j++) {
+        for (size_t i = 0; i < newTensor.shape_[0]; i++) {
+            newTensor.at({i, j}) = tensor.at({i, 0});
+        }
+    }
+
+    return newTensor;
+}
+
+template <typename T>
+Tensor<T> hReduce(const Tensor<T> &tensor) {
+    Tensor<T> newTensor{std::vector<size_t>{tensor.shape_[0], 0}};
+
+    for (size_t i = 0; i < tensor.shape_[0]; i++) {
+        T sum = 0;
+        for (size_t j = 0; j < tensor.shape_[1]; j++) {
+            sum += tensor.at({i, j});
+        }
+        newTensor.at({i, 0}) = sum;
     }
 
     return newTensor;

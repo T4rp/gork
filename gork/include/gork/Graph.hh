@@ -49,8 +49,8 @@ class Graph {
     NodeId relu(NodeId tensor);
     NodeId reluDeriv(NodeId tensor);
     NodeId negate(NodeId nodeId);
-    NodeId vBroadcast(NodeId nodeId);
-    NodeId vReduce(NodeId nodeId);
+    NodeId hBroadcast(NodeId nodeId);
+    NodeId hReduce(NodeId nodeId);
 
     std::unordered_map<NodeId, NodeId> mapGradientNodes(NodeId toCompute);
 
@@ -190,6 +190,18 @@ NodeId Graph<T>::negate(NodeId nodeId) {
 };
 
 template <typename T>
+NodeId Graph<T>::hBroadcast(NodeId nodeId) {
+    nodes_.emplace_back(TensorOp::HBroadcast, std::vector<NodeId>{nodeId});
+    return nodes_.size() - 1;
+};
+
+template <typename T>
+NodeId Graph<T>::hReduce(NodeId nodeId) {
+    nodes_.emplace_back(TensorOp::HReduce, std::vector<NodeId>{nodeId});
+    return nodes_.size() - 1;
+};
+
+template <typename T>
 typename Graph<T>::Node &Graph<T>::get(NodeId id) {
     return nodes_[id];
 }
@@ -305,9 +317,9 @@ std::unordered_map<NodeId, NodeId> Graph<T>::mapGradientNodes(NodeId toCompute) 
             break;
         }
         case TensorOp::ReluDeriv:
+        case TensorOp::HReduce:
             throw std::runtime_error("unimplemented");
-        case TensorOp::VBroadcast:
-        case TensorOp::VReduce:
+        case TensorOp::HBroadcast:
             throw std::runtime_error("todo");
         }
     }

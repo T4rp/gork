@@ -160,9 +160,24 @@ void CpuGraphExecutor<T>::compute(const std::vector<Tensor<T>> &inputs, NodeId n
             *tensor = gork::ops::negate(child0);
             break;
         }
-        case TensorOp::VBroadcast:
-        case TensorOp::VReduce:
-            throw std::runtime_error("unimplemented");
+        case TensorOp::HBroadcast: {
+            auto &child0 = tensors_[node.inputs_[0]];
+            auto &child1 = tensors_[node.inputs_[1]];
+
+            if (!child1.isScalar()) {
+                throw std::runtime_error("invalid second input. must be a scalar");
+            }
+
+            size_t count = static_cast<size_t>(child1.data_[0]);
+            *tensor = gork::ops::hBroadcast(child0, count);
+
+            break;
+        }
+        case TensorOp::HReduce: {
+            auto &child0 = tensors_[node.inputs_[0]];
+            *tensor = gork::ops::hReduce(child0);
+            break;
+        }
         }
     }
 }
