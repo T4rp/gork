@@ -31,10 +31,7 @@ class Graph {
     std::vector<NodeId> inputs_;
     std::vector<NodeId> outputs_;
 
-    Graph()
-        : nodes_{},
-          inputs_{},
-          outputs_{} {}
+    Graph();
 
     NodeId input();
     Node &get(NodeId id);
@@ -66,6 +63,12 @@ Graph<T>::Node::Node(TensorOp op, std::vector<NodeId> inputs)
     : tensor_{},
       op_{op},
       inputs_{std::move(inputs)} {}
+
+template <typename T>
+Graph<T>::Graph()
+    : nodes_{},
+      inputs_{},
+      outputs_{} {}
 
 template <typename T>
 NodeId Graph<T>::input() {

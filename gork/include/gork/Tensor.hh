@@ -83,12 +83,12 @@ Tensor<T> &Tensor<T>::operator=(const Tensor<T> &rhs) {
 
     delete[] data_;
 
-    data_ = new T[rhs.size_];
-    std::copy(rhs.data_, rhs.data_ + size_, data_);
-
     size_ = rhs.size_;
     shape_ = rhs.shape_;
     strides_ = rhs.strides_;
+
+    data_ = new T[size_];
+    std::copy(rhs.data_, rhs.data_ + size_, data_);
 
     return *this;
 }

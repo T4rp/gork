@@ -3,8 +3,11 @@
 
 #include "gork/Graph.hh"
 #include "gork/GraphExecutor.hh"
+#include "gork/Tensor.hh"
 #include "gork/ops.hh"
+#include <cstddef>
 #include <stdexcept>
+#include <vector>
 
 namespace gork {
 
@@ -12,22 +15,45 @@ template <typename T>
 class CpuGraphExecutor : public GraphExecutor<T> {
   public:
     CpuGraphExecutor();
+    ~CpuGraphExecutor();
 
     void useGraph(Graph<T> &graph);
     const Graph<T> *getGraph() const;
+    Tensor<T> &getValue(NodeId nodeId);
 
-    void compute(NodeId node);
+    void compute(const std::vector<Tensor<T>> &inputs, NodeId node);
 
   private:
     Graph<T> *graph_;
+    std::vector<Tensor<T>> tensors_;
 };
 
 template <typename T>
-CpuGraphExecutor<T>::CpuGraphExecutor() {}
+CpuGraphExecutor<T>::CpuGraphExecutor()
+    : graph_{nullptr},
+      tensors_{} {}
+
+template <typename T>
+CpuGraphExecutor<T>::~CpuGraphExecutor() {
+    graph_ = nullptr;
+}
 
 template <typename T>
 void CpuGraphExecutor<T>::useGraph(Graph<T> &graph) {
     graph_ = &graph;
+    tensors_ = std::vector<Tensor<T>>{};
+
+    auto &nodes = graph_->getNodes();
+    size_t nodeCount = nodes.size();
+
+    for (size_t i = 0; i < nodeCount; i++) {
+        auto node = graph_->get(i);
+        if (node.op_ == TensorOp::Constant) {
+            tensors_.push_back(node.tensor_);
+        } else {
+            tensors_.push_back(Tensor<T>{});
+        }
+    }
 }
 
 template <typename T>
@@ -36,15 +62,25 @@ const Graph<T> *CpuGraphExecutor<T>::getGraph() const {
 }
 
 template <typename T>
-void CpuGraphExecutor<T>::compute(NodeId lastNodeId) {
+Tensor<T> &CpuGraphExecutor<T>::getValue(NodeId nodeId) {
+    return tensors_[nodeId];
+}
+
+template <typename T>
+void CpuGraphExecutor<T>::compute(const std::vector<Tensor<T>> &inputs, NodeId nodeId) {
     if (graph_ == nullptr) {
         throw std::runtime_error("Graph not present");
+    }
+
+    for (size_t i = 0; i < graph_->inputs_.size(); i++) {
+        NodeId nodeId = graph_->inputs_[i];
+        tensors_[nodeId] = inputs[i];
     }
 
     std::vector<NodeId> dependencies{};
     std::vector<NodeId> stack{};
 
-    stack.push_back(lastNodeId);
+    stack.push_back(nodeId);
 
     while (stack.size() > 0) {
         NodeId nodeId = stack.back();
@@ -64,56 +100,57 @@ void CpuGraphExecutor<T>::compute(NodeId lastNodeId) {
     for (size_t i = dependencies.size(); i--;) {
         NodeId nodeId = dependencies[i];
         auto &node = graph_->get(nodeId);
+        auto *tensor = &tensors_[nodeId];
 
         switch (node.op_) {
         case TensorOp::Matmul: {
-            auto &child0 = graph_->get(node.inputs_[0]);
-            auto &child1 = graph_->get(node.inputs_[1]);
-            node.tensor_ = gork::ops::matmul(child0.tensor_, child1.tensor_);
+            auto &child0 = tensors_[node.inputs_[0]];
+            auto &child1 = tensors_[node.inputs_[1]];
+            *tensor = gork::ops::matmul(child0, child1);
             break;
         }
         case TensorOp::Transpose: {
-            auto &child0 = graph_->get(node.inputs_[0]);
-            node.tensor_ = gork::ops::transpose(child0.tensor_);
+            auto &child0 = tensors_[node.inputs_[0]];
+            *tensor = gork::ops::transpose(child0);
             break;
         }
         case TensorOp::Add: {
-            auto &child0 = graph_->get(node.inputs_[0]);
-            auto &child1 = graph_->get(node.inputs_[1]);
-            node.tensor_ = gork::ops::add(child0.tensor_, child1.tensor_);
+            auto &child0 = tensors_[node.inputs_[0]];
+            auto &child1 = tensors_[node.inputs_[1]];
+            *tensor = gork::ops::add(child0, child1);
             break;
         }
         case TensorOp::Sub: {
-            auto &child0 = graph_->get(node.inputs_[0]);
-            auto &child1 = graph_->get(node.inputs_[1]);
-            node.tensor_ = gork::ops::sub(child0.tensor_, child1.tensor_);
+            auto &child0 = tensors_[node.inputs_[0]];
+            auto &child1 = tensors_[node.inputs_[1]];
+            *tensor = gork::ops::sub(child0, child1);
             break;
         }
         case TensorOp::Mul: {
-            auto &child0 = graph_->get(node.inputs_[0]);
-            auto &child1 = graph_->get(node.inputs_[1]);
-            node.tensor_ = gork::ops::mul(child0.tensor_, child1.tensor_);
+            auto &child0 = tensors_[node.inputs_[0]];
+            auto &child1 = tensors_[node.inputs_[1]];
+            *tensor = gork::ops::mul(child0, child1);
             break;
         }
         case TensorOp::ElementwiseSquare: {
-            auto &child0 = graph_->get(node.inputs_[0]);
-            node.tensor_ = gork::ops::elementwiseSquare(child0.tensor_);
+            auto &child0 = tensors_[node.inputs_[0]];
+            *tensor = gork::ops::elementwiseSquare(child0);
             break;
         }
         case TensorOp::BroadcastAdd: {
-            auto &child0 = graph_->get(node.inputs_[0]);
-            auto &child1 = graph_->get(node.inputs_[1]);
-            node.tensor_ = gork::ops::broadcastAdd(child0.tensor_, child1.tensor_);
+            auto &child0 = tensors_[node.inputs_[0]];
+            auto &child1 = tensors_[node.inputs_[1]];
+            *tensor = gork::ops::broadcastAdd(child0, child1);
             break;
         }
         case TensorOp::Relu: {
-            auto &child0 = graph_->get(node.inputs_[0]);
-            node.tensor_ = gork::ops::relu(child0.tensor_);
+            auto &child0 = tensors_[node.inputs_[0]];
+            *tensor = gork::ops::relu(child0);
             break;
         }
         case TensorOp::ReluDeriv: {
-            auto &child0 = graph_->get(node.inputs_[0]);
-            node.tensor_ = gork::ops::reluDeriv(child0.tensor_);
+            auto &child0 = tensors_[node.inputs_[0]];
+            *tensor = gork::ops::reluDeriv(child0);
             break;
         }
         }
