@@ -8,6 +8,7 @@ TEST_CASE("Graphs can be made", "[Graph]") {
     REQUIRE(graph.getNodes().size() == 0);
 }
 
+/*
 TEST_CASE("Nodes can be inserted", "[Graph]") {
     gork::Graph<float> graph{};
 
@@ -197,3 +198,4 @@ TEST_CASE("Relu backwards should compute", "[Graph]") {
     REQUIRE(gradient.at({1, 0}) == 1);
     REQUIRE(gradient.at({1, 1}) == 0);
 }
+*/

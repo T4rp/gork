@@ -19,27 +19,13 @@ class Graph {
       public:
         TensorOp op_;
         size_t paramIndex_;
-
-        Tensor<T> tensor_;
-        Tensor<T> gradient_;
-
         std::vector<NodeId> inputs_;
 
-        Node(Tensor<T> tensor, TensorOp op);
-        Node(Tensor<T> tensor, TensorOp op, std::vector<NodeId> inputs);
-    };
+        /// Should only be used for constant nodes. treat as uninitalized otherwise
+        Tensor<T> tensor_;
 
-    struct BackwardsGraphResult {
-        /// graph for backwards pass
-        Graph<T> graph;
-        /// predicted value of forward pass
-        NodeId prediction;
-        /// expected value with inputs
-        NodeId expected;
-        /// input values
-        std::vector<NodeId> inputs;
-        /// maps forward nodes to backward nodes
-        std::unordered_map<NodeId, NodeId> nodeMap;
+        Node(TensorOp op);
+        Node(TensorOp op, std::vector<NodeId> inputs);
     };
 
     std::vector<NodeId> inputs_;
@@ -50,7 +36,7 @@ class Graph {
           inputs_{},
           outputs_{} {}
 
-    NodeId input(Tensor<T> tensor);
+    NodeId input();
     Node &get(NodeId id);
     const std::vector<Node> &getNodes() const;
 
@@ -64,34 +50,29 @@ class Graph {
     NodeId relu(NodeId tensor);
     NodeId reluDeriv(NodeId tensor);
 
-    Tensor<T> &compute(NodeId toCompute);
-
-    void backwards(NodeId toCompute);
-    BackwardsGraphResult buildBackwardsGraph(NodeId toCompute);
+    std::unordered_map<NodeId, NodeId> mapGradientNodes(NodeId toCompute);
 
   private:
     std::vector<Node> nodes_;
 };
 
 template <typename T>
-Graph<T>::Node::Node(Tensor<T> tensor, TensorOp op)
-    : tensor_{std::move(tensor)},
-      gradient_{},
+Graph<T>::Node::Node(TensorOp op)
+    : tensor_{},
       op_{op} {}
 
 template <typename T>
-Graph<T>::Node::Node(Tensor<T> tensor, TensorOp op, std::vector<NodeId> inputs)
-    : tensor_{std::move(tensor)},
-      gradient_{},
+Graph<T>::Node::Node(TensorOp op, std::vector<NodeId> inputs)
+    : tensor_{},
       op_{op},
       inputs_{std::move(inputs)} {}
 
 template <typename T>
-NodeId Graph<T>::input(Tensor<T> tensor) {
+NodeId Graph<T>::input() {
     NodeId nextNodeId = nodes_.size();
     NodeId nextInputParamIndex = inputs_.size();
 
-    nodes_.emplace_back(std::move(tensor), TensorOp::Input);
+    nodes_.emplace_back(TensorOp::Input);
 
     auto &backNode = nodes_.back();
     backNode.paramIndex_ = nextInputParamIndex;
@@ -103,7 +84,11 @@ NodeId Graph<T>::input(Tensor<T> tensor) {
 template <typename T>
 NodeId Graph<T>::constant(Tensor<T> tensor) {
     NodeId nextNodeId = nodes_.size();
-    nodes_.emplace_back(std::move(tensor), TensorOp::Constant);
+
+    nodes_.emplace_back(TensorOp::Constant);
+
+    Node &backNode = nodes_.back();
+    backNode.tensor_ = std::move(tensor);
 
     return nextNodeId;
 }
@@ -200,7 +185,9 @@ typename Graph<T>::Node &Graph<T>::get(NodeId id) {
 }
 
 template <typename T>
-Tensor<T> &Graph<T>::compute(NodeId toCompute) {
+std::unordered_map<NodeId, NodeId> Graph<T>::mapGradientNodes(NodeId toCompute) {
+    std::unordered_map<NodeId, NodeId> result{};
+
     std::vector<NodeId> dependencies{};
     std::vector<NodeId> stack{};
 
@@ -213,67 +200,8 @@ Tensor<T> &Graph<T>::compute(NodeId toCompute) {
         dependencies.push_back(nodeId);
 
         Node &node = get(nodeId);
-
-        for (NodeId parentId : node.inputs_) {
-            stack.push_back(parentId);
-        }
-    }
-
-    std::reverse(std::begin(dependencies), std::end(dependencies));
-
-    for (size_t i = dependencies.size(); i--;) {
-        NodeId nodeId = dependencies[i];
-        Node &node = get(nodeId);
-        switch (node.op_) {
-        case TensorOp::Matmul: {
-            Node &child0 = get(node.inputs_[0]);
-            Node &child1 = get(node.inputs_[1]);
-            node.tensor_ = gork::ops::matmul(child0.tensor_, child1.tensor_);
-            break;
-        }
-        case TensorOp::Add: {
-            Node &child0 = get(node.inputs_[0]);
-            Node &child1 = get(node.inputs_[1]);
-            node.tensor_ = gork::ops::add(child0.tensor_, child1.tensor_);
-            break;
-        }
-        case TensorOp::Sub: {
-            Node &child0 = get(node.inputs_[0]);
-            Node &child1 = get(node.inputs_[1]);
-            node.tensor_ = gork::ops::sub(child0.tensor_, child1.tensor_);
-            break;
-        }
-        case TensorOp::BroadcastAdd: {
-            Node &child0 = get(node.inputs_[0]);
-            Node &child1 = get(node.inputs_[1]);
-            node.tensor_ = gork::ops::broadcastAdd(child0.tensor_, child1.tensor_);
-            break;
-        }
-        case TensorOp::Relu: {
-            Node &child0 = get(node.inputs_[0]);
-            node.tensor_ = gork::ops::relu(child0.tensor_);
-            break;
-        }
-        }
-    }
-
-    return get(toCompute).tensor_;
-}
-
-template <typename T>
-void Graph<T>::backwards(NodeId toCompute) {
-    std::vector<NodeId> dependencies{};
-    std::vector<NodeId> stack{};
-
-    stack.push_back(toCompute);
-
-    while (stack.size() > 0) {
-        NodeId nodeId = stack.back();
-        stack.pop_back();
-
-        dependencies.push_back(nodeId);
-
-        Node &node = get(nodeId);
+        result[nodeId] = constant(Tensor<T>{{1}});
+        get(result[nodeId]).tensor_.at({}) = 0.0;
 
         for (NodeId parentId : node.inputs_) {
             stack.push_back(parentId);
@@ -284,78 +212,10 @@ void Graph<T>::backwards(NodeId toCompute) {
 
     Node &resultNode = get(toCompute);
 
-    Tensor<T> resultGradient{std::vector<size_t>{}};
-    resultGradient.at({}) = 1.0;
-    resultNode.gradient_ = std::move(resultGradient);
-
-    for (size_t i = dependencies.size(); i--;) {
-        NodeId nodeId = dependencies[i];
-        Node &outNode = get(nodeId);
-
-        switch (outNode.op_) {
-        case TensorOp::Add:
-        case TensorOp::BroadcastAdd: {
-            Node &inode0 = get(outNode.inputs_[0]);
-            Node &inode1 = get(outNode.inputs_[1]);
-
-            inode0.gradient_ = outNode.gradient_;
-            inode1.gradient_ = outNode.gradient_;
-
-            break;
-        }
-        case TensorOp::Matmul: {
-            Node &inNode0 = get(outNode.inputs_[0]);
-            Node &inNode1 = get(outNode.inputs_[1]);
-
-            inNode0.gradient_ =
-                gork::ops::matmul(outNode.gradient_, gork::ops::transpose(inNode1.tensor_));
-            inNode1.gradient_ =
-                gork::ops::matmul(gork::ops::transpose(inNode0.tensor_), outNode.gradient_);
-
-            break;
-        }
-        case TensorOp::Relu: {
-            Node &inNode0 = get(outNode.inputs_[0]);
-
-            inNode0.gradient_ =
-                gork::ops::mul(gork::ops::reluDeriv(inNode0.tensor_), outNode.gradient_);
-
-            break;
-        }
-        }
-    }
-}
-
-template <typename T>
-typename Graph<T>::BackwardsGraphResult Graph<T>::buildBackwardsGraph(NodeId toCompute) {
-    BackwardsGraphResult result{};
-
-    std::vector<NodeId> dependencies{};
-    std::vector<NodeId> stack{};
-
-    stack.push_back(toCompute);
-
-    while (stack.size() > 0) {
-        NodeId nodeId = stack.back();
-        stack.pop_back();
-
-        dependencies.push_back(nodeId);
-
-        Node &node = get(nodeId);
-
-        for (NodeId parentId : node.inputs_) {
-            stack.push_back(parentId);
-        }
-    }
-
-    std::reverse(std::begin(dependencies), std::end(dependencies));
-
-    Node &resultNode = get(toCompute);
-
-    auto intialGradient = result.graph.addTensor(Tensor<T>{});
+    auto intialGradient = constant(Tensor<T>{{1}});
     get(intialGradient).tensor_.at({}) = 1.0;
 
-    result.nodeMap[toCompute] = intialGradient;
+    result[toCompute] = intialGradient;
 
     for (size_t i = dependencies.size(); i--;) {
         NodeId nodeId = dependencies[i];
@@ -370,8 +230,8 @@ typename Graph<T>::BackwardsGraphResult Graph<T>::buildBackwardsGraph(NodeId toC
             auto grad0 = noOp(nodeId);
             auto grad1 = noOp(nodeId);
 
-            result.nodeMap[inode0] = grad0;
-            result.nodeMap[inode1] = grad1;
+            result[inode0] = grad0;
+            result[inode1] = grad1;
 
             break;
         }
@@ -382,8 +242,8 @@ typename Graph<T>::BackwardsGraphResult Graph<T>::buildBackwardsGraph(NodeId toC
             auto grad0 = matmul(outNode, transpose(inode1));
             auto grad1 = matmul(transpose(inode0), outNode);
 
-            result.nodeMap[inode0] = grad0;
-            result.nodeMap[inode1] = grad1;
+            result[inode0] = grad0;
+            result[inode1] = grad1;
 
             break;
         }
@@ -392,7 +252,7 @@ typename Graph<T>::BackwardsGraphResult Graph<T>::buildBackwardsGraph(NodeId toC
 
             auto grad0 = mul(reluDeriv(inode0), outNode);
 
-            result.nodeMap[inode0] = grad0;
+            result[inode0] = grad0;
         }
         }
     }
