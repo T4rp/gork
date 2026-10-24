@@ -44,6 +44,8 @@ class Graph {
     NodeId transpose(NodeId tensor);
     NodeId broadcastAdd(NodeId lhs, NodeId rhs);
     NodeId add(NodeId lhs, NodeId rhs);
+    NodeId sub(NodeId lhs, NodeId rhs);
+    NodeId mul(NodeId lhs, NodeId rhs);
     NodeId relu(NodeId tensor);
     NodeId reluDeriv(NodeId tensor);
 
@@ -152,9 +154,21 @@ NodeId Graph<T>::broadcastAdd(NodeId lhs, NodeId rhs) {
 template <typename T>
 NodeId Graph<T>::add(NodeId lhs, NodeId rhs) {
     Node &leftNode = nodes_[lhs];
-
     nodes_.emplace_back(TensorOp::Add, std::vector<NodeId>{lhs, rhs});
+    return nodes_.size() - 1;
+}
 
+template <typename T>
+NodeId Graph<T>::sub(NodeId lhs, NodeId rhs) {
+    Node &leftNode = nodes_[lhs];
+    nodes_.emplace_back(TensorOp::Sub, std::vector<NodeId>{lhs, rhs});
+    return nodes_.size() - 1;
+}
+
+template <typename T>
+NodeId Graph<T>::mul(NodeId lhs, NodeId rhs) {
+    Node &leftNode = nodes_[lhs];
+    nodes_.emplace_back(TensorOp::Mul, std::vector<NodeId>{lhs, rhs});
     return nodes_.size() - 1;
 }
 
@@ -198,7 +212,7 @@ std::unordered_map<NodeId, NodeId> Graph<T>::mapGradientNodes(NodeId toCompute) 
         dependencies.push_back(nodeId);
 
         Node &node = get(nodeId);
-        result[nodeId] = constant(Tensor<T>{{1}});
+        result[nodeId] = constant(Tensor<T>{{}});
         get(result[nodeId]).tensor_.at({}) = 0.0;
 
         for (NodeId parentId : node.inputs_) {
@@ -210,7 +224,7 @@ std::unordered_map<NodeId, NodeId> Graph<T>::mapGradientNodes(NodeId toCompute) 
 
     Node &resultNode = get(toCompute);
 
-    auto intialGradient = constant(Tensor<T>{{1}});
+    auto intialGradient = constant(Tensor<T>{{}});
     get(intialGradient).tensor_.at({}) = 1.0;
 
     result[toCompute] = intialGradient;
@@ -218,6 +232,8 @@ std::unordered_map<NodeId, NodeId> Graph<T>::mapGradientNodes(NodeId toCompute) 
     for (size_t i = dependencies.size(); i--;) {
         NodeId nodeId = dependencies[i];
         Node &outNode = get(nodeId);
+
+        NodeId outNodeGradientId = result[nodeId];
 
         switch (outNode.op_) {
         case TensorOp::Add:
@@ -237,8 +253,8 @@ std::unordered_map<NodeId, NodeId> Graph<T>::mapGradientNodes(NodeId toCompute) 
             NodeId inode0 = outNode.inputs_[0];
             NodeId inode1 = outNode.inputs_[1];
 
-            auto grad0 = matmul(outNode, transpose(inode1));
-            auto grad1 = matmul(transpose(inode0), outNode);
+            auto grad0 = matmul(outNodeGradientId, transpose(inode1));
+            auto grad1 = matmul(transpose(inode0), outNodeGradientId);
 
             result[inode0] = add(result[inode0], grad0);
             result[inode1] = add(result[inode1], grad1);
@@ -248,8 +264,7 @@ std::unordered_map<NodeId, NodeId> Graph<T>::mapGradientNodes(NodeId toCompute) 
         case TensorOp::Relu: {
             NodeId inode0 = outNode.inputs_[0];
 
-            auto grad0 = mul(reluDeriv(inode0), outNode);
-
+            auto grad0 = mul(reluDeriv(inode0), outNodeGradientId);
             result[inode0] = add(result[inode0], grad0);
         }
         }

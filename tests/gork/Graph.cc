@@ -65,3 +65,15 @@ TEST_CASE("Nodes can be retrieved", "[Graph]") {
 
     REQUIRE(node.op_ == gork::TensorOp::Input);
 }
+
+TEST_CASE("Graph can build backwards pass", "[Graph]") {
+    gork::Graph<float> graph{};
+
+    auto node1 = graph.input();
+    auto node2 = graph.input();
+    auto node3 = graph.matmul(node1, node2);
+
+    auto gradientMap = graph.mapGradientNodes(node3);
+
+    // TODO: add test cases
+}
