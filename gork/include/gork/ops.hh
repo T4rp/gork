@@ -20,11 +20,11 @@ enum class TensorOp {
     Sub,
     Mul,
     ElementwiseSquare,
-    BroadcastAdd,
     Relu,
     ReluDeriv,
-
-    Reduce,
+    Negate,
+    VBroadcast,
+    VReduce,
 };
 
 namespace ops {
@@ -248,6 +248,17 @@ Tensor<T> reluDeriv(const Tensor<T> &tensor) {
         }
 
         newTensor.data_[i] = out;
+    }
+
+    return newTensor;
+}
+
+template <typename T>
+Tensor<T> negate(const Tensor<T> &tensor) {
+    Tensor<T> newTensor = tensor;
+
+    for (size_t i = 0; i < newTensor.size_; i++) {
+        newTensor.data_[i] *= -1;
     }
 
     return newTensor;

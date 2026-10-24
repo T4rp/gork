@@ -103,6 +103,14 @@ void CpuGraphExecutor<T>::compute(const std::vector<Tensor<T>> &inputs, NodeId n
         auto *tensor = &tensors_[nodeId];
 
         switch (node.op_) {
+        case TensorOp::Input:
+        case TensorOp::Constant:
+            break;
+        case TensorOp::NoOp:
+        case TensorOp::Output: {
+            auto &child0 = tensors_[node.inputs_[0]];
+            *tensor = child0;
+        }
         case TensorOp::Matmul: {
             auto &child0 = tensors_[node.inputs_[0]];
             auto &child1 = tensors_[node.inputs_[1]];
@@ -137,12 +145,6 @@ void CpuGraphExecutor<T>::compute(const std::vector<Tensor<T>> &inputs, NodeId n
             *tensor = gork::ops::elementwiseSquare(child0);
             break;
         }
-        case TensorOp::BroadcastAdd: {
-            auto &child0 = tensors_[node.inputs_[0]];
-            auto &child1 = tensors_[node.inputs_[1]];
-            *tensor = gork::ops::broadcastAdd(child0, child1);
-            break;
-        }
         case TensorOp::Relu: {
             auto &child0 = tensors_[node.inputs_[0]];
             *tensor = gork::ops::relu(child0);
@@ -153,6 +155,14 @@ void CpuGraphExecutor<T>::compute(const std::vector<Tensor<T>> &inputs, NodeId n
             *tensor = gork::ops::reluDeriv(child0);
             break;
         }
+        case TensorOp::Negate: {
+            auto &child0 = tensors_[node.inputs_[0]];
+            *tensor = gork::ops::negate(child0);
+            break;
+        }
+        case TensorOp::VBroadcast:
+        case TensorOp::VReduce:
+            throw std::runtime_error("unimplemented");
         }
     }
 }

@@ -5,6 +5,7 @@
 #include "gork/ops.hh"
 #include <algorithm>
 #include <iterator>
+#include <stdexcept>
 #include <unordered_map>
 #include <vector>
 
@@ -33,21 +34,23 @@ class Graph {
 
     Graph();
 
-    NodeId input();
     Node &get(NodeId id);
     const std::vector<Node> &getNodes() const;
 
-    NodeId constant(Tensor<T> tensor);
-    NodeId output(NodeId nodeId);
     NodeId noOp(NodeId tensor);
+    NodeId input();
+    NodeId output(NodeId nodeId);
+    NodeId constant(Tensor<T> tensor);
     NodeId matmul(NodeId lhs, NodeId rhs);
     NodeId transpose(NodeId tensor);
-    NodeId broadcastAdd(NodeId lhs, NodeId rhs);
     NodeId add(NodeId lhs, NodeId rhs);
     NodeId sub(NodeId lhs, NodeId rhs);
     NodeId mul(NodeId lhs, NodeId rhs);
     NodeId relu(NodeId tensor);
     NodeId reluDeriv(NodeId tensor);
+    NodeId negate(NodeId nodeId);
+    NodeId vBroadcast(NodeId nodeId);
+    NodeId vReduce(NodeId nodeId);
 
     std::unordered_map<NodeId, NodeId> mapGradientNodes(NodeId toCompute);
 
@@ -142,16 +145,6 @@ NodeId Graph<T>::transpose(NodeId tensor) {
 }
 
 template <typename T>
-NodeId Graph<T>::broadcastAdd(NodeId lhs, NodeId rhs) {
-    Node &rightNode = nodes_[rhs];
-    Node &leftNode = nodes_[lhs];
-
-    nodes_.emplace_back(TensorOp::BroadcastAdd, std::vector<NodeId>{lhs, rhs});
-
-    return nodes_.size() - 1;
-};
-
-template <typename T>
 NodeId Graph<T>::add(NodeId lhs, NodeId rhs) {
     Node &leftNode = nodes_[lhs];
     nodes_.emplace_back(TensorOp::Add, std::vector<NodeId>{lhs, rhs});
@@ -176,7 +169,6 @@ template <typename T>
 NodeId Graph<T>::relu(NodeId nodeId) {
     Node &node = nodes_[nodeId];
 
-    Tensor<T> result{};
     nodes_.emplace_back(TensorOp::Relu, std::vector<NodeId>{nodeId});
 
     return nodes_.size() - 1;
@@ -188,6 +180,12 @@ NodeId Graph<T>::reluDeriv(NodeId nodeId) {
 
     nodes_.emplace_back(TensorOp::ReluDeriv, std::vector<NodeId>{nodeId});
 
+    return nodes_.size() - 1;
+};
+
+template <typename T>
+NodeId Graph<T>::negate(NodeId nodeId) {
+    nodes_.emplace_back(TensorOp::Negate, std::vector<NodeId>{nodeId});
     return nodes_.size() - 1;
 };
 
@@ -236,16 +234,17 @@ std::unordered_map<NodeId, NodeId> Graph<T>::mapGradientNodes(NodeId toCompute) 
         NodeId outNodeGradientId = result[nodeId];
 
         switch (outNode.op_) {
-        case TensorOp::Add:
-        case TensorOp::BroadcastAdd: {
+        case TensorOp::Input:
+        case TensorOp::Constant:
+            // root nodes
+            break;
+        case TensorOp::NoOp:
+        case TensorOp::Output: {
             NodeId inode0 = outNode.inputs_[0];
-            NodeId inode1 = outNode.inputs_[1];
 
-            auto grad0 = noOp(nodeId);
-            auto grad1 = noOp(nodeId);
+            auto grad0 = noOp(outNodeGradientId);
 
             result[inode0] = add(result[inode0], grad0);
-            result[inode1] = add(result[inode1], grad1);
 
             break;
         }
@@ -261,12 +260,55 @@ std::unordered_map<NodeId, NodeId> Graph<T>::mapGradientNodes(NodeId toCompute) 
 
             break;
         }
+        case TensorOp::Add: {
+            NodeId inode0 = outNode.inputs_[0];
+            NodeId inode1 = outNode.inputs_[1];
+
+            auto grad0 = noOp(outNodeGradientId);
+            auto grad1 = noOp(outNodeGradientId);
+
+            result[inode0] = add(result[inode0], grad0);
+            result[inode1] = add(result[inode1], grad1);
+
+            break;
+        }
+        case TensorOp::Sub: {
+            NodeId inode0 = outNode.inputs_[0];
+            NodeId inode1 = outNode.inputs_[1];
+
+            auto grad0 = noOp(outNodeGradientId);
+            auto grad1 = negate(outNodeGradientId);
+
+            result[inode0] = add(result[inode0], grad0);
+            result[inode1] = add(result[inode1], grad1);
+
+            break;
+        }
+        case TensorOp::Mul: {
+            NodeId inode0 = outNode.inputs_[0];
+            NodeId inode1 = outNode.inputs_[1];
+
+            auto grad0 = mul(inode1, outNodeGradientId);
+            auto grad1 = mul(inode0, outNodeGradientId);
+
+            result[inode0] = add(result[inode0], grad0);
+            result[inode1] = add(result[inode1], grad1);
+
+            break;
+        }
         case TensorOp::Relu: {
             NodeId inode0 = outNode.inputs_[0];
 
             auto grad0 = mul(reluDeriv(inode0), outNodeGradientId);
             result[inode0] = add(result[inode0], grad0);
+
+            break;
         }
+        case TensorOp::ReluDeriv:
+            throw std::runtime_error("unimplemented");
+        case TensorOp::VBroadcast:
+        case TensorOp::VReduce:
+            throw std::runtime_error("todo");
         }
     }
 
