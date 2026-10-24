@@ -12,8 +12,8 @@ TEST_CASE("Tensors can be made", "[Tensor]") {
 TEST_CASE("Tensors values can be set", "[Tensor]") {
     std::vector<size_t> shape{256, 128};
     gork::Tensor<float> tensor{shape};
-    tensor.at({100, 200}) = 4.0;
-    REQUIRE(tensor.at({100, 200}) == 4.0);
+    tensor.at({200, 100}) = 4.0;
+    REQUIRE(tensor.at({200, 100}) == 4.0);
 }
 
 TEST_CASE("Tensors can be dumped", "[Tensor]") {

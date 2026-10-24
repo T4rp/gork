@@ -20,7 +20,7 @@ class Tensor {
     std::vector<size_t> strides_;
 
     Tensor();
-    Tensor(const std::vector<size_t> &tensor_shape);
+    Tensor(std::vector<size_t> tensor_shape);
     Tensor(const Tensor<T> &other);
     Tensor(Tensor<T> &&other) noexcept;
     Tensor<T> &operator=(const Tensor<T> &other);
@@ -40,20 +40,19 @@ Tensor<T>::Tensor()
     : data_(nullptr) {}
 
 template <typename T>
-Tensor<T>::Tensor(const std::vector<size_t> &shape)
-    : shape_(shape) {
+Tensor<T>::Tensor(std::vector<size_t> shape)
+    : shape_{std::move(shape)} {
     size_ = 1;
-    for (auto dim : shape) {
+    for (auto dim : shape_) {
         size_ *= dim;
     }
 
     data_ = new T[size_];
-    strides_.resize(shape.size());
 
     size_t stride = 1;
-    for (size_t i = shape.size(); i-- > 0;) {
-        strides_[i] = stride;
-        stride *= shape[i];
+    for (size_t i = 0; i < shape_.size(); i++) {
+        strides_.push_back(stride);
+        stride *= shape_[i];
     }
 }
 
