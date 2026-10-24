@@ -230,8 +230,8 @@ std::unordered_map<NodeId, NodeId> Graph<T>::mapGradientNodes(NodeId toCompute) 
             auto grad0 = noOp(nodeId);
             auto grad1 = noOp(nodeId);
 
-            result[inode0] = grad0;
-            result[inode1] = grad1;
+            result[inode0] = add(result[inode0], grad0);
+            result[inode1] = add(result[inode1], grad1);
 
             break;
         }
@@ -242,8 +242,8 @@ std::unordered_map<NodeId, NodeId> Graph<T>::mapGradientNodes(NodeId toCompute) 
             auto grad0 = matmul(outNode, transpose(inode1));
             auto grad1 = matmul(transpose(inode0), outNode);
 
-            result[inode0] = grad0;
-            result[inode1] = grad1;
+            result[inode0] = add(result[inode0], grad0);
+            result[inode1] = add(result[inode1], grad1);
 
             break;
         }
@@ -252,7 +252,7 @@ std::unordered_map<NodeId, NodeId> Graph<T>::mapGradientNodes(NodeId toCompute) 
 
             auto grad0 = mul(reluDeriv(inode0), outNode);
 
-            result[inode0] = grad0;
+            result[inode0] = add(result[inode0], grad0);
         }
         }
     }
