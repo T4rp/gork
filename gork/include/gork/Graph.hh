@@ -473,11 +473,17 @@ std::unordered_map<NodeId, NodeId> Graph<T>::mapGradientNodes(NodeId toCompute) 
 
             break;
         }
+        case TensorOp::HBroadcast: {
+            NodeId inode0 = outNode.inputs_[0];
+
+            auto grad0 = hReduce(outNodeGradientId);
+            result[inode0] = add(result[inode0], grad0);
+
+            break;
+        }
         case TensorOp::ReluDeriv:
         case TensorOp::HReduce:
             throw std::runtime_error("unimplemented");
-        case TensorOp::HBroadcast:
-            throw std::runtime_error("todo");
         }
     }
 
