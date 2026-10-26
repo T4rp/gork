@@ -2,6 +2,7 @@
 #define GORK_GRAPH_H_
 
 #include "gork/Tensor.hh"
+#include "gork/Value.hh"
 #include "gork/ops.hh"
 #include <algorithm>
 #include <iterator>
@@ -16,51 +17,13 @@ using NodeId = size_t;
 template <typename T>
 class Graph {
   public:
-    enum class ValueType {
-        Undefined,
-        Scalar,
-        Tensor,
-        Index,
-    };
-
-    class Value {
-      public:
-        ValueType ty_;
-        union Val {
-            Tensor<T> tensor_;
-            size_t index_;
-            T scalar_;
-
-            Val() {};
-            ~Val() {};
-        } val_;
-
-        Value();
-        Value(T scalar);
-        Value(Tensor<T> tensor);
-        Value(size_t index);
-        ~Value();
-
-        Value(const Value &);
-        Value(Value &&) noexcept;
-        Value &operator=(const Value &);
-        Value &operator=(Value &&) noexcept;
-
-        Tensor<T> asTensor();
-
-      private:
-        void destroy() noexcept;
-        void copyFrom(const Value &);
-        void moveFrom(Value &&);
-    };
-
-    class Node {
+        class Node {
       public:
         TensorOp op_;
         size_t paramIndex_;
         std::vector<NodeId> inputs_;
 
-        Value value_;
+        Value<T> value_;
 
         Node(TensorOp op);
         Node(TensorOp op, std::vector<NodeId> inputs);
@@ -77,7 +40,7 @@ class Graph {
     NodeId noOp(NodeId tensor);
     NodeId input();
     NodeId output(NodeId nodeId);
-    NodeId constant(Value value);
+    NodeId constant(Value<T> value);
     NodeId matmul(NodeId lhs, NodeId rhs);
     NodeId transpose(NodeId tensor);
     NodeId add(NodeId lhs, NodeId rhs);
@@ -93,137 +56,6 @@ class Graph {
 
   private:
     std::vector<Node> nodes_;
-};
-
-template <typename T>
-Graph<T>::Value::Value()
-    : ty_{ValueType::Undefined} {};
-
-template <typename T>
-Graph<T>::Value::Value(T scalar)
-    : ty_{ValueType::Scalar} {
-    val_.scalar_ = scalar;
-};
-
-template <typename T>
-Graph<T>::Value::Value(Tensor<T> tensor)
-    : ty_{ValueType::Tensor} {
-    new (&val_.tensor_) Tensor<T>(std::move(tensor));
-};
-
-template <typename T>
-Graph<T>::Value::Value(size_t index)
-    : ty_{ValueType::Index} {
-    val_.index_ = index;
-};
-
-template <typename T>
-Graph<T>::Value::~Value() {
-    destroy();
-};
-
-template <typename T>
-void Graph<T>::Value::destroy() noexcept {
-    switch (ty_) {
-    case ValueType::Tensor:
-        val_.tensor_.~Tensor();
-        break;
-    case ValueType::Undefined:
-    case ValueType::Scalar:
-    case ValueType::Index:
-        break;
-    }
-
-    ty_ = ValueType::Undefined;
-}
-
-template <typename T>
-void Graph<T>::Value::copyFrom(const Value &value) {
-    switch (value.ty_) {
-    case ValueType::Undefined:
-        break;
-    case ValueType::Scalar:
-        val_.scalar_ = value.val_.scalar_;
-        break;
-    case ValueType::Index:
-        val_.index_ = value.val_.index_;
-        break;
-    case ValueType::Tensor:
-        new (&val_.tensor_) Tensor<T>(value.val_.tensor_);
-        break;
-    }
-
-    ty_ = value.ty_;
-}
-
-template <typename T>
-void Graph<T>::Value::moveFrom(Value &&value) {
-    switch (value.ty_) {
-    case ValueType::Undefined:
-        break;
-    case ValueType::Scalar:
-        val_.scalar_ = value.val_.scalar_;
-        break;
-    case ValueType::Index:
-        val_.index_ = value.val_.index_;
-        break;
-    case ValueType::Tensor:
-        new (&val_.tensor_) Tensor<T>(std::move(value.val_.tensor_));
-        break;
-    }
-
-    ty_ = value.ty_;
-    value.ty_ = ValueType::Undefined;
-}
-
-template <typename T>
-Graph<T>::Value::Value(const Value &value)
-    : ty_{ValueType::Undefined} {
-    copyFrom(value);
-};
-
-template <typename T>
-Graph<T>::Value::Value(Value &&value) noexcept
-    : ty_{ValueType::Undefined} {
-    moveFrom(std::move(value));
-};
-
-template <typename T>
-typename Graph<T>::Value &Graph<T>::Value::operator=(const Value &value) {
-    if (this == &value)
-        return *this;
-
-    destroy();
-    copyFrom(value);
-
-    return *this;
-}
-
-template <typename T>
-typename Graph<T>::Value &Graph<T>::Value::operator=(Value &&value) noexcept {
-    if (this == &value)
-        return *this;
-
-    destroy();
-    moveFrom(std::move(value));
-
-    return *this;
-}
-
-template <typename T>
-Tensor<T> Graph<T>::Value::asTensor() {
-    switch (ty_) {
-    case ValueType::Scalar: {
-        Tensor<T> tensor{};
-        tensor.at({}) = val_.scalar_;
-        return tensor;
-    }
-    case ValueType::Tensor: {
-        return val_.tensor_;
-    }
-    default:
-        return Tensor<T>{};
-    }
 };
 
 template <typename T>
@@ -258,7 +90,7 @@ NodeId Graph<T>::input() {
 }
 
 template <typename T>
-NodeId Graph<T>::constant(Graph<T>::Value value) {
+NodeId Graph<T>::constant(Value<T> value) {
     NodeId nextNodeId = nodes_.size();
 
     nodes_.emplace_back(TensorOp::Constant);
@@ -359,7 +191,7 @@ NodeId Graph<T>::negate(NodeId nodeId) {
 
 template <typename T>
 NodeId Graph<T>::hBroadcast(NodeId nodeId, size_t count) {
-    auto countNodeId = constant(Value{count});
+    auto countNodeId = constant(Value<T>{count});
     nodes_.emplace_back(TensorOp::HBroadcast, std::vector<NodeId>{nodeId, countNodeId});
     return nodes_.size() - 1;
 };
