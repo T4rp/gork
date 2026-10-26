@@ -21,6 +21,7 @@ class Tensor {
 
     Tensor();
     Tensor(std::vector<size_t> tensor_shape);
+    Tensor(std::initializer_list<size_t> tensor_shape);
     Tensor(const Tensor<T> &other);
     Tensor(Tensor<T> &&other) noexcept;
     Tensor<T> &operator=(const Tensor<T> &other);
@@ -42,6 +43,27 @@ Tensor<T>::Tensor()
 template <typename T>
 Tensor<T>::Tensor(std::vector<size_t> shape)
     : shape_{std::move(shape)} {
+    size_ = 1;
+    for (auto dim : shape_) {
+        size_ *= dim;
+    }
+
+    data_ = new T[size_];
+
+    size_t stride = 1;
+    for (size_t i = 0; i < shape_.size(); i++) {
+        strides_.push_back(stride);
+        stride *= shape_[i];
+    }
+}
+
+template <typename T>
+Tensor<T>::Tensor(std::initializer_list<size_t> tensor_shape) {
+    shape_.reserve(tensor_shape.size());
+    for (size_t dim : tensor_shape) {
+        shape_.push_back(dim);
+    }
+
     size_ = 1;
     for (auto dim : shape_) {
         size_ *= dim;

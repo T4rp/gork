@@ -6,7 +6,22 @@
 
 TEST_CASE("Tensors can be made", "[Tensor]") {
     std::vector<size_t> shape{256, 128};
-    gork::Tensor<float> tensor{shape};
+
+    gork::Tensor<float> tensor1{shape}; // copy vector
+    REQUIRE(tensor1.shape_[0] == 256);
+    REQUIRE(tensor1.shape_[1] == 128);
+
+    gork::Tensor<float> tensor2{std::move(shape)}; // move vector
+    REQUIRE(tensor2.shape_[0] == 256);
+    REQUIRE(tensor2.shape_[1] == 128);
+
+    gork::Tensor<float> tensor3{{256, 128}}; // rvalue
+    REQUIRE(tensor3.shape_[0] == 256);
+    REQUIRE(tensor3.shape_[1] == 128);
+
+    gork::Tensor<float> tensor4{256, 128}; // list initalizer
+    REQUIRE(tensor4.shape_[0] == 256);
+    REQUIRE(tensor4.shape_[1] == 128);
 }
 
 TEST_CASE("Tensors values can be set", "[Tensor]") {
