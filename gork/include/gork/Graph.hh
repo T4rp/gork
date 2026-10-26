@@ -41,13 +41,17 @@ class Graph {
         Value(size_t index);
         ~Value();
 
-        // TODO: Implement these
         Value(const Value &);
-        Value(Value &&);
-        Value &operator=(const Value &) noexcept;
+        Value(Value &&) noexcept;
+        Value &operator=(const Value &);
         Value &operator=(Value &&) noexcept;
 
         Tensor<T> asTensor();
+
+      private:
+        void destroy() noexcept;
+        void copyFrom(const Value &);
+        void moveFrom(Value &&);
     };
 
     class Node {
@@ -114,9 +118,28 @@ Graph<T>::Value::Value(size_t index)
 };
 
 template <typename T>
-Graph<T>::Value::Value(const Value &value)
-    : ty_{value.ty_} {
+Graph<T>::Value::~Value() {
+    destroy();
+};
+
+template <typename T>
+void Graph<T>::Value::destroy() noexcept {
     switch (ty_) {
+    case ValueType::Tensor:
+        val_.tensor_.~Tensor();
+        break;
+    case ValueType::Undefined:
+    case ValueType::Scalar:
+    case ValueType::Index:
+        break;
+    }
+
+    ty_ = ValueType::Undefined;
+}
+
+template <typename T>
+void Graph<T>::Value::copyFrom(const Value &value) {
+    switch (value.ty_) {
     case ValueType::Undefined:
         break;
     case ValueType::Scalar:
@@ -129,12 +152,13 @@ Graph<T>::Value::Value(const Value &value)
         new (&val_.tensor_) Tensor<T>(value.val_.tensor_);
         break;
     }
-};
+
+    ty_ = value.ty_;
+}
 
 template <typename T>
-Graph<T>::Value::Value(Value &&value)
-    : ty_{value.val_} {
-    switch (ty_) {
+void Graph<T>::Value::moveFrom(Value &&value) {
+    switch (value.ty_) {
     case ValueType::Undefined:
         break;
     case ValueType::Scalar:
@@ -147,55 +171,41 @@ Graph<T>::Value::Value(Value &&value)
         new (&val_.tensor_) Tensor<T>(std::move(value.val_.tensor_));
         break;
     }
-};
 
-template <typename T>
-Graph<T>::Value::~Value() {
-    switch (ty_) {
-    case ValueType::Tensor:
-        val_.tensor_.~Tensor();
-    }
-};
-
-template <typename T>
-typename Graph<T>::Value &Graph<T>::Value::operator=(const Value &value) noexcept {
     ty_ = value.ty_;
+    value.ty_ = ValueType::Undefined;
+}
 
-    switch (ty_) {
-    case ValueType::Undefined:
-        break;
-    case ValueType::Scalar:
-        val_.scalar_ = value.val_.scalar_;
-        break;
-    case ValueType::Index:
-        val_.index_ = value.val_.index_;
-        break;
-    case ValueType::Tensor:
-        new (&val_.tensor_) Tensor<T>(value.val_.tensor_);
-        value.val_.tensor_.~Tensor();
-        break;
-    }
+template <typename T>
+Graph<T>::Value::Value(const Value &value)
+    : ty_{ValueType::Undefined} {
+    copyFrom(value);
+};
+
+template <typename T>
+Graph<T>::Value::Value(Value &&value) noexcept
+    : ty_{ValueType::Undefined} {
+    moveFrom(std::move(value));
+};
+
+template <typename T>
+typename Graph<T>::Value &Graph<T>::Value::operator=(const Value &value) {
+    if (this == &value)
+        return *this;
+
+    destroy();
+    copyFrom(value);
 
     return *this;
 }
 
 template <typename T>
 typename Graph<T>::Value &Graph<T>::Value::operator=(Value &&value) noexcept {
-    ty_ = value.ty_;
+    if (this == &value)
+        return *this;
 
-    switch (ty_) {
-    case ValueType::Undefined:
-        break;
-    case ValueType::Scalar:
-        val_.scalar_ = value.val_.scalar_;
-        break;
-    case ValueType::Index:
-        val_.index_ = value.val_.index_;
-        break;
-    case ValueType::Tensor:
-        new (&val_.tensor_) Tensor<T>(std::move(value.val_.tensor_));
-        break;
-    }
+    destroy();
+    moveFrom(std::move(value));
 
     return *this;
 }
