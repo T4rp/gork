@@ -4,7 +4,6 @@
 #include "gork/Graph.hh"
 #include "gork/GraphExecutor.hh"
 #include "gork/Tensor.hh"
-#include "gork/Value.hh"
 #include "gork/ops.hh"
 #include <cstddef>
 #include <stdexcept>
@@ -168,10 +167,7 @@ void CpuGraphExecutor<T>::compute(const std::vector<Tensor<T>> &inputs, NodeId n
             auto countNodeId = node.inputs_[1];
             auto &node = graph_->get(countNodeId);
 
-            if (node.value_.ty_ != ValueType::Index)
-                std::runtime_error("Incorrect type");
-
-            size_t count = node.value_.val_.index_;
+            size_t count = std::get<size_t>(node.value_.val_);
             *tensor = gork::ops::hBroadcast(child0, count);
 
             break;
