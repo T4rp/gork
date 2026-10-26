@@ -16,14 +16,47 @@ using NodeId = size_t;
 template <typename T>
 class Graph {
   public:
+    enum class ValueType {
+        Undefined,
+        Scalar,
+        Tensor,
+        Index,
+    };
+
+    class Value {
+      public:
+        ValueType ty_;
+        union Val {
+            Tensor<T> tensor_;
+            size_t index_;
+            T scalar_;
+
+            Val() {};
+            ~Val() {};
+        } val_;
+
+        Value();
+        Value(T scalar);
+        Value(Tensor<T> tensor);
+        Value(size_t index);
+        ~Value();
+
+        // TODO: Implement these
+        Value(const Value &);
+        Value(Value &&);
+        Value &operator=(const Value &) noexcept;
+        Value &operator=(Value &&) noexcept;
+
+        Tensor<T> asTensor();
+    };
+
     class Node {
       public:
         TensorOp op_;
         size_t paramIndex_;
         std::vector<NodeId> inputs_;
 
-        /// Should only be used for constant nodes. treat as uninitalized otherwise
-        Tensor<T> tensor_;
+        Value value_;
 
         Node(TensorOp op);
         Node(TensorOp op, std::vector<NodeId> inputs);
@@ -40,7 +73,7 @@ class Graph {
     NodeId noOp(NodeId tensor);
     NodeId input();
     NodeId output(NodeId nodeId);
-    NodeId constant(Tensor<T> tensor);
+    NodeId constant(Value value);
     NodeId matmul(NodeId lhs, NodeId rhs);
     NodeId transpose(NodeId tensor);
     NodeId add(NodeId lhs, NodeId rhs);
@@ -49,7 +82,7 @@ class Graph {
     NodeId relu(NodeId tensor);
     NodeId reluDeriv(NodeId tensor);
     NodeId negate(NodeId nodeId);
-    NodeId hBroadcast(NodeId nodeId);
+    NodeId hBroadcast(NodeId nodeId, size_t count);
     NodeId hReduce(NodeId nodeId);
 
     std::unordered_map<NodeId, NodeId> mapGradientNodes(NodeId toCompute);
@@ -59,13 +92,138 @@ class Graph {
 };
 
 template <typename T>
+Graph<T>::Value::Value()
+    : ty_{ValueType::Undefined} {};
+
+template <typename T>
+Graph<T>::Value::Value(T scalar)
+    : ty_{ValueType::Scalar} {
+    val_.scalar_ = scalar;
+};
+
+template <typename T>
+Graph<T>::Value::Value(Tensor<T> tensor)
+    : ty_{ValueType::Tensor} {
+    new (&val_.tensor_) Tensor<T>(std::move(tensor));
+};
+
+template <typename T>
+Graph<T>::Value::Value(size_t index)
+    : ty_{ValueType::Index} {
+    val_.index_ = index;
+};
+
+template <typename T>
+Graph<T>::Value::Value(const Value &value)
+    : ty_{value.ty_} {
+    switch (ty_) {
+    case ValueType::Undefined:
+        break;
+    case ValueType::Scalar:
+        val_.scalar_ = value.val_.scalar_;
+        break;
+    case ValueType::Index:
+        val_.index_ = value.val_.index_;
+        break;
+    case ValueType::Tensor:
+        new (&val_.tensor_) Tensor<T>(value.val_.tensor_);
+        break;
+    }
+};
+
+template <typename T>
+Graph<T>::Value::Value(Value &&value)
+    : ty_{value.val_} {
+    switch (ty_) {
+    case ValueType::Undefined:
+        break;
+    case ValueType::Scalar:
+        val_.scalar_ = value.val_.scalar_;
+        break;
+    case ValueType::Index:
+        val_.index_ = value.val_.index_;
+        break;
+    case ValueType::Tensor:
+        new (&val_.tensor_) Tensor<T>(std::move(value.val_.tensor_));
+        break;
+    }
+};
+
+template <typename T>
+Graph<T>::Value::~Value() {
+    switch (ty_) {
+    case ValueType::Tensor:
+        val_.tensor_.~Tensor();
+    }
+};
+
+template <typename T>
+typename Graph<T>::Value &Graph<T>::Value::operator=(const Value &value) noexcept {
+    ty_ = value.ty_;
+
+    switch (ty_) {
+    case ValueType::Undefined:
+        break;
+    case ValueType::Scalar:
+        val_.scalar_ = value.val_.scalar_;
+        break;
+    case ValueType::Index:
+        val_.index_ = value.val_.index_;
+        break;
+    case ValueType::Tensor:
+        new (&val_.tensor_) Tensor<T>(value.val_.tensor_);
+        value.val_.tensor_.~Tensor();
+        break;
+    }
+
+    return *this;
+}
+
+template <typename T>
+typename Graph<T>::Value &Graph<T>::Value::operator=(Value &&value) noexcept {
+    ty_ = value.ty_;
+
+    switch (ty_) {
+    case ValueType::Undefined:
+        break;
+    case ValueType::Scalar:
+        val_.scalar_ = value.val_.scalar_;
+        break;
+    case ValueType::Index:
+        val_.index_ = value.val_.index_;
+        break;
+    case ValueType::Tensor:
+        new (&val_.tensor_) Tensor<T>(std::move(value.val_.tensor_));
+        break;
+    }
+
+    return *this;
+}
+
+template <typename T>
+Tensor<T> Graph<T>::Value::asTensor() {
+    switch (ty_) {
+    case ValueType::Scalar: {
+        Tensor<T> tensor{};
+        tensor.at({}) = val_.scalar_;
+        return tensor;
+    }
+    case ValueType::Tensor: {
+        return val_.tensor_;
+    }
+    default:
+        return Tensor<T>{};
+    }
+};
+
+template <typename T>
 Graph<T>::Node::Node(TensorOp op)
-    : tensor_{},
+    : value_{},
       op_{op} {}
 
 template <typename T>
 Graph<T>::Node::Node(TensorOp op, std::vector<NodeId> inputs)
-    : tensor_{},
+    : value_{},
       op_{op},
       inputs_{std::move(inputs)} {}
 
@@ -90,13 +248,13 @@ NodeId Graph<T>::input() {
 }
 
 template <typename T>
-NodeId Graph<T>::constant(Tensor<T> tensor) {
+NodeId Graph<T>::constant(Graph<T>::Value value) {
     NodeId nextNodeId = nodes_.size();
 
     nodes_.emplace_back(TensorOp::Constant);
 
     Node &backNode = nodes_.back();
-    backNode.tensor_ = std::move(tensor);
+    backNode.value_ = std::move(value);
 
     return nextNodeId;
 }
@@ -190,8 +348,9 @@ NodeId Graph<T>::negate(NodeId nodeId) {
 };
 
 template <typename T>
-NodeId Graph<T>::hBroadcast(NodeId nodeId) {
-    nodes_.emplace_back(TensorOp::HBroadcast, std::vector<NodeId>{nodeId});
+NodeId Graph<T>::hBroadcast(NodeId nodeId, size_t count) {
+    auto countNodeId = constant(Value{count});
+    nodes_.emplace_back(TensorOp::HBroadcast, std::vector<NodeId>{nodeId, countNodeId});
     return nodes_.size() - 1;
 };
 
@@ -222,8 +381,7 @@ std::unordered_map<NodeId, NodeId> Graph<T>::mapGradientNodes(NodeId toCompute) 
         dependencies.push_back(nodeId);
 
         Node &node = get(nodeId);
-        result[nodeId] = constant(Tensor<T>{{}});
-        get(result[nodeId]).tensor_.at({}) = 0.0;
+        result[nodeId] = constant(Value{static_cast<T>(0)});
 
         for (NodeId parentId : node.inputs_) {
             stack.push_back(parentId);
@@ -234,8 +392,7 @@ std::unordered_map<NodeId, NodeId> Graph<T>::mapGradientNodes(NodeId toCompute) 
 
     Node &resultNode = get(toCompute);
 
-    auto intialGradient = constant(Tensor<T>{{}});
-    get(intialGradient).tensor_.at({}) = 1.0;
+    auto intialGradient = constant(Value{static_cast<T>(1)});
 
     result[toCompute] = intialGradient;
 

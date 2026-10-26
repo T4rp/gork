@@ -111,3 +111,36 @@ TEST_CASE("It should compute Relu", "[CpuGraphExecutor]") {
     REQUIRE(result.at({0, 1}) == 0);
     REQUIRE(result.at({1, 1}) == 0);
 }
+
+TEST_CASE("It should compute horizontal broadcast", "[CpuGraphExecutor]") {
+    gork::Graph<float> graph{};
+
+    gork::Tensor<float> tensor1{std::vector<size_t>{3, 1}};
+
+    tensor1.at({0, 0}) = 6.0;
+    tensor1.at({1, 0}) = 7.0;
+    tensor1.at({2, 0}) = 8.0;
+
+    gork::NodeId node1 = graph.input();
+    auto node2 = graph.hBroadcast(node1, 3);
+
+    gork::CpuGraphExecutor<float> executor{};
+    executor.useGraph(graph);
+
+    std::vector<gork::Tensor<float>> inputs{tensor1};
+    executor.compute(inputs, node2);
+
+    auto &result = executor.getValue(node2);
+
+    REQUIRE(result.at({0, 0}) == 6.0);
+    REQUIRE(result.at({1, 0}) == 7.0);
+    REQUIRE(result.at({2, 0}) == 8.0);
+
+    REQUIRE(result.at({0, 1}) == 6.0);
+    REQUIRE(result.at({1, 1}) == 7.0);
+    REQUIRE(result.at({2, 1}) == 8.0);
+
+    REQUIRE(result.at({0, 2}) == 6.0);
+    REQUIRE(result.at({1, 2}) == 7.0);
+    REQUIRE(result.at({2, 2}) == 8.0);
+}

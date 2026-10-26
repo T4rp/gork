@@ -49,7 +49,7 @@ void CpuGraphExecutor<T>::useGraph(Graph<T> &graph) {
     for (size_t i = 0; i < nodeCount; i++) {
         auto node = graph_->get(i);
         if (node.op_ == TensorOp::Constant) {
-            tensors_.push_back(node.tensor_);
+            tensors_.push_back(node.value_.asTensor());
         } else {
             tensors_.push_back(Tensor<T>{});
         }
@@ -164,11 +164,13 @@ void CpuGraphExecutor<T>::compute(const std::vector<Tensor<T>> &inputs, NodeId n
             auto &child0 = tensors_[node.inputs_[0]];
             auto &child1 = tensors_[node.inputs_[1]];
 
-            if (!child1.isScalar()) {
-                throw std::runtime_error("invalid second input. must be a scalar");
-            }
+            auto countNodeId = node.inputs_[1];
+            auto &node = graph_->get(countNodeId);
 
-            size_t count = static_cast<size_t>(child1.data_[0]);
+            if (node.value_.ty_ != Graph<T>::ValueType::Index)
+                std::runtime_error("Incorrect type");
+
+            size_t count = node.value_.val_.index_;
             *tensor = gork::ops::hBroadcast(child0, count);
 
             break;
