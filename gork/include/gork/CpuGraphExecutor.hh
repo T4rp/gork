@@ -95,9 +95,7 @@ void CpuGraphExecutor<T>::compute(const std::vector<Tensor<T>> &inputs, NodeId n
         }
     }
 
-    std::reverse(std::begin(dependencies), std::end(dependencies));
-
-    for (size_t i = dependencies.size(); i--;) {
+    for (size_t i = dependencies.size(); i-- > 0;) {
         NodeId nodeId = dependencies[i];
         auto &node = graph_->get(nodeId);
         auto *tensor = &tensors_[nodeId];
@@ -110,6 +108,7 @@ void CpuGraphExecutor<T>::compute(const std::vector<Tensor<T>> &inputs, NodeId n
         case TensorOp::Output: {
             auto &child0 = tensors_[node.inputs_[0]];
             *tensor = child0;
+            break;
         }
         case TensorOp::Matmul: {
             auto &child0 = tensors_[node.inputs_[0]];

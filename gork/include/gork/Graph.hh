@@ -5,7 +5,6 @@
 #include "gork/Value.hh"
 #include "gork/ops.hh"
 #include <algorithm>
-#include <iterator>
 #include <stdexcept>
 #include <unordered_map>
 #include <vector>
@@ -17,7 +16,7 @@ using NodeId = size_t;
 template <typename T>
 class Graph {
   public:
-        class Node {
+    class Node {
       public:
         TensorOp op_;
         size_t paramIndex_;
@@ -126,11 +125,7 @@ NodeId Graph<T>::noOp(NodeId tensor) {
 
 template <typename T>
 NodeId Graph<T>::matmul(NodeId lhs, NodeId rhs) {
-    Node &rightNode = nodes_[rhs];
-    Node &leftNode = nodes_[lhs];
-
     nodes_.emplace_back(TensorOp::Matmul, std::vector<NodeId>{lhs, rhs});
-
     return nodes_.size() - 1;
 }
 
@@ -146,7 +141,6 @@ NodeId Graph<T>::transpose(NodeId tensor) {
 
 template <typename T>
 NodeId Graph<T>::add(NodeId lhs, NodeId rhs) {
-    Node &leftNode = nodes_[lhs];
     nodes_.emplace_back(TensorOp::Add, std::vector<NodeId>{lhs, rhs});
     return nodes_.size() - 1;
 }
@@ -176,10 +170,7 @@ NodeId Graph<T>::relu(NodeId nodeId) {
 
 template <typename T>
 NodeId Graph<T>::reluDeriv(NodeId nodeId) {
-    Node &node = nodes_[nodeId];
-
     nodes_.emplace_back(TensorOp::ReluDeriv, std::vector<NodeId>{nodeId});
-
     return nodes_.size() - 1;
 };
 
@@ -230,12 +221,7 @@ std::unordered_map<NodeId, NodeId> Graph<T>::mapGradientNodes(NodeId toCompute) 
         }
     }
 
-    std::reverse(std::begin(dependencies), std::end(dependencies));
-
-    Node &resultNode = get(toCompute);
-
     auto intialGradient = constant(Value{static_cast<T>(1)});
-
     result[toCompute] = intialGradient;
 
     for (size_t i = dependencies.size(); i--;) {

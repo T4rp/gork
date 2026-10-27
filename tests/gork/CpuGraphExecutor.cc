@@ -1,4 +1,5 @@
 #include "gork/Graph.hh"
+#include "gork/Tensor.hh"
 #include <catch2/catch_test_macros.hpp>
 #include <gork/CpuGraphExecutor.hh>
 #include <vector>
@@ -143,4 +144,48 @@ TEST_CASE("It should compute horizontal broadcast", "[CpuGraphExecutor]") {
     REQUIRE(result.at({0, 2}) == 6.0);
     REQUIRE(result.at({1, 2}) == 7.0);
     REQUIRE(result.at({2, 2}) == 8.0);
+}
+
+TEST_CASE("It should compute chains", "[CpuGraphExecutor]") {
+    using Graph = gork::Graph<float>;
+    using Tensor = gork::Tensor<float>;
+
+    Graph graph{};
+
+    Tensor input{2, 1};
+    input.at({0, 0}) = 0.5;
+    input.at({1, 0}) = 0.5;
+
+    Tensor weights{2, 2};
+    weights.at({0, 0}) = -0.9;
+    weights.at({1, 0}) = -0.2;
+    weights.at({0, 1}) = 0.5;
+    weights.at({1, 1}) = 0.1;
+
+    // TIL when they say they are "training the weights", they actually mean
+    // they are training both the weights AND the biases.
+    Tensor bias{2, 1};
+    bias.at({0, 0}) = 0.01;
+    bias.at({1, 0}) = 0.01;
+
+    auto inputNode = graph.input();
+    auto weightsNode = graph.input();
+    auto biasNode = graph.input();
+
+    // if we were doing a batch, we should broadcast to batch size
+    auto biasBroadcasted = graph.hBroadcast(biasNode, 1);
+
+    auto step1 = graph.matmul(weightsNode, inputNode);
+    auto step2 = graph.add(step1, biasBroadcasted);
+    auto step3 = graph.relu(step2);
+
+    gork::CpuGraphExecutor<float> executor{};
+    executor.useGraph(graph);
+
+    std::vector<Tensor> inputs{input, weights, bias};
+    executor.compute(inputs, step3);
+
+    auto &result = executor.getValue(step3);
+
+    result.dump_mat();
 }
