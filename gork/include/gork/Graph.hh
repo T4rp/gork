@@ -59,20 +59,20 @@ class Graph {
 
 template <typename T>
 Graph<T>::Node::Node(TensorOp op)
-    : value_{},
-      op_{op} {}
+    : op_{op},
+      value_{} {}
 
 template <typename T>
 Graph<T>::Node::Node(TensorOp op, std::vector<NodeId> inputs)
-    : value_{},
-      op_{op},
-      inputs_{std::move(inputs)} {}
+    : op_{op},
+      inputs_{std::move(inputs)},
+      value_{} {}
 
 template <typename T>
 Graph<T>::Graph()
-    : nodes_{},
-      inputs_{},
-      outputs_{} {}
+    : inputs_{},
+      outputs_{},
+      nodes_{} {}
 
 template <typename T>
 NodeId Graph<T>::input() {
@@ -116,10 +116,7 @@ NodeId Graph<T>::output(NodeId nodeId) {
 
 template <typename T>
 NodeId Graph<T>::noOp(NodeId tensor) {
-    Node &node = nodes_[tensor];
-
     nodes_.emplace_back(TensorOp::NoOp, std::vector<NodeId>{tensor});
-
     return nodes_.size() - 1;
 }
 
@@ -131,8 +128,6 @@ NodeId Graph<T>::matmul(NodeId lhs, NodeId rhs) {
 
 template <typename T>
 NodeId Graph<T>::transpose(NodeId tensor) {
-    Node &node = nodes_[tensor];
-
     Tensor<T> result{};
     nodes_.emplace_back(TensorOp::Transpose, std::vector<NodeId>{tensor});
 
@@ -147,24 +142,19 @@ NodeId Graph<T>::add(NodeId lhs, NodeId rhs) {
 
 template <typename T>
 NodeId Graph<T>::sub(NodeId lhs, NodeId rhs) {
-    Node &leftNode = nodes_[lhs];
     nodes_.emplace_back(TensorOp::Sub, std::vector<NodeId>{lhs, rhs});
     return nodes_.size() - 1;
 }
 
 template <typename T>
 NodeId Graph<T>::mul(NodeId lhs, NodeId rhs) {
-    Node &leftNode = nodes_[lhs];
     nodes_.emplace_back(TensorOp::Mul, std::vector<NodeId>{lhs, rhs});
     return nodes_.size() - 1;
 }
 
 template <typename T>
 NodeId Graph<T>::relu(NodeId nodeId) {
-    Node &node = nodes_[nodeId];
-
     nodes_.emplace_back(TensorOp::Relu, std::vector<NodeId>{nodeId});
-
     return nodes_.size() - 1;
 };
 
@@ -309,7 +299,10 @@ std::unordered_map<NodeId, NodeId> Graph<T>::mapGradientNodes(NodeId toCompute) 
 
             break;
         }
+        case TensorOp::Transpose:
         case TensorOp::ReluDeriv:
+        case TensorOp::ElementwiseSquare:
+        case TensorOp::Negate:
         case TensorOp::HReduce:
             throw std::runtime_error("unimplemented");
         }

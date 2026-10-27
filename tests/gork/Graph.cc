@@ -19,7 +19,6 @@ TEST_CASE("Graph inputs are recorded", "[Graph]") {
     gork::Graph<float> graph{};
 
     auto nodeId = graph.input();
-    auto &node = graph.get(nodeId);
 
     REQUIRE(nodeId == graph.inputs_[0]);
 }
@@ -29,8 +28,6 @@ TEST_CASE("Graph outputs are recorded", "[Graph]") {
 
     auto inputId = graph.input();
     auto outputId = graph.output(inputId);
-
-    auto &node = graph.get(outputId);
 
     REQUIRE(outputId == graph.outputs_[0]);
 }

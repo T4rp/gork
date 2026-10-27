@@ -161,7 +161,6 @@ void CpuGraphExecutor<T>::compute(const std::vector<Tensor<T>> &inputs, NodeId n
         }
         case TensorOp::HBroadcast: {
             auto &child0 = tensors_[node.inputs_[0]];
-            auto &child1 = tensors_[node.inputs_[1]];
 
             auto countNodeId = node.inputs_[1];
             auto &node = graph_->get(countNodeId);

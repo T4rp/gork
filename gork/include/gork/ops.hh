@@ -138,7 +138,6 @@ Tensor<T> sub(const Tensor<T> &lhs, const Tensor<T> &rhs) {
         }
 
         Tensor<T> tensor{lhs.shape_};
-        T scalar = lhs.data_[0];
         for (size_t i = 0; i < lhs.size_; i++) {
             tensor.data_[i] = lhs.data_[i] - rhs.data_[i];
         }
@@ -176,7 +175,6 @@ Tensor<T> mul(const Tensor<T> &lhs, const Tensor<T> &rhs) {
         }
 
         Tensor<T> tensor{lhs.shape_};
-        T scalar = lhs.data_[0];
         for (size_t i = 0; i < lhs.size_; i++) {
             tensor.data_[i] = lhs.data_[i] * rhs.data_[i];
         }

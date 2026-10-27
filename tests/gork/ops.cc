@@ -1,7 +1,6 @@
 #include "gork/ops.hh"
 #include "gork/Tensor.hh"
 #include <catch2/catch_test_macros.hpp>
-#include <vector>
 
 TEST_CASE("Horizontal broadcast should work", "[ops]") {
     gork::Tensor<float> tensor{{4, 1}};

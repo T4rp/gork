@@ -80,10 +80,10 @@ Tensor<T>::Tensor(std::initializer_list<size_t> tensor_shape) {
 
 template <typename T>
 Tensor<T>::Tensor(const Tensor<T> &rhs)
-    : size_{rhs.size_},
+    : data_{nullptr},
+      size_{rhs.size_},
       shape_{rhs.shape_},
-      strides_{rhs.strides_},
-      data_{nullptr} {
+      strides_{rhs.strides_} {
     if (rhs.data_ != nullptr) {
         data_ = new T[size_];
         std::copy(rhs.data_, rhs.data_ + size_, data_);
@@ -92,10 +92,10 @@ Tensor<T>::Tensor(const Tensor<T> &rhs)
 
 template <typename T>
 Tensor<T>::Tensor(Tensor<T> &&rhs) noexcept
-    : size_{std::move(rhs.size_)},
+    : data_{std::exchange(rhs.data_, nullptr)},
+      size_{std::move(rhs.size_)},
       shape_{std::move(rhs.shape_)},
-      strides_{std::move(rhs.strides_)},
-      data_{std::exchange(rhs.data_, nullptr)} {}
+      strides_{std::move(rhs.strides_)} {}
 
 template <typename T>
 Tensor<T> &Tensor<T>::operator=(const Tensor<T> &rhs) {
