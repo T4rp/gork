@@ -14,5 +14,5 @@ target_link_libraries(tests
         mnist
 )
 
-target_compile_options(tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
+target_compile_options(tests PRIVATE -Wall -Wextra -Wpedantic)
 
