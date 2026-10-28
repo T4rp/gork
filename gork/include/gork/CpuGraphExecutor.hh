@@ -175,6 +175,22 @@ void CpuGraphExecutor<T>::compute(const std::vector<Tensor<T>> &inputs, NodeId n
             *tensor = gork::ops::hReduce(child0);
             break;
         }
+        case TensorOp::VBroadcast: {
+            auto &child0 = tensors_[node.inputs_[0]];
+
+            auto countNodeId = node.inputs_[1];
+            auto &node = graph_->get(countNodeId);
+
+            size_t count = std::get<size_t>(node.value_.val_);
+            *tensor = gork::ops::vBroadcast(child0, count);
+
+            break;
+        }
+        case TensorOp::VReduce: {
+            auto &child0 = tensors_[node.inputs_[0]];
+            *tensor = gork::ops::vReduce(child0);
+            break;
+        }
         }
     }
 }

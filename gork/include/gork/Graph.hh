@@ -50,6 +50,8 @@ class Graph {
     NodeId negate(NodeId nodeId);
     NodeId hBroadcast(NodeId nodeId, size_t count);
     NodeId hReduce(NodeId nodeId);
+    NodeId vBroadcast(NodeId nodeId, size_t count);
+    NodeId vReduce(NodeId nodeId);
 
     std::unordered_map<NodeId, NodeId> mapGradientNodes(NodeId toCompute);
 
@@ -184,6 +186,19 @@ NodeId Graph<T>::hReduce(NodeId nodeId) {
 };
 
 template <typename T>
+NodeId Graph<T>::vBroadcast(NodeId nodeId, size_t count) {
+    auto countNodeId = constant(Value<T>{count});
+    nodes_.emplace_back(TensorOp::VBroadcast, std::vector<NodeId>{nodeId, countNodeId});
+    return nodes_.size() - 1;
+};
+
+template <typename T>
+NodeId Graph<T>::vReduce(NodeId nodeId) {
+    nodes_.emplace_back(TensorOp::VReduce, std::vector<NodeId>{nodeId});
+    return nodes_.size() - 1;
+};
+
+template <typename T>
 typename Graph<T>::Node &Graph<T>::get(NodeId id) {
     return nodes_[id];
 }
@@ -299,11 +314,20 @@ std::unordered_map<NodeId, NodeId> Graph<T>::mapGradientNodes(NodeId toCompute) 
 
             break;
         }
+        case TensorOp::VBroadcast: {
+            NodeId inode0 = outNode.inputs_[0];
+
+            auto grad0 = vReduce(outNodeGradientId);
+            result[inode0] = add(result[inode0], grad0);
+
+            break;
+        }
         case TensorOp::Transpose:
         case TensorOp::ReluDeriv:
         case TensorOp::ElementwiseSquare:
         case TensorOp::Negate:
         case TensorOp::HReduce:
+        case TensorOp::VReduce:
             throw std::runtime_error("unimplemented");
         }
     }
