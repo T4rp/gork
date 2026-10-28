@@ -1,5 +1,6 @@
 #include "gork/Graph.hh"
 #include "gork/Tensor.hh"
+#include "gork/Value.hh"
 #include <catch2/catch_test_macros.hpp>
 #include <gork/CpuGraphExecutor.hh>
 #include <vector>
@@ -188,4 +189,35 @@ TEST_CASE("It should compute chains", "[CpuGraphExecutor]") {
     auto &result = executor.getValue(step3);
 
     result.dump_mat();
+}
+
+TEST_CASE("It should work with a different numeric type", "[CpuGraphExecutor]") {
+    gork::Graph graph{};
+
+    gork::Tensor<double> tensor1{std::vector<size_t>{2, 2}};
+    gork::Tensor<double> tensor2{std::vector<size_t>{2, 2}};
+
+    tensor1.at({0, 0}) = 1;
+    tensor1.at({1, 0}) = 3;
+    tensor1.at({0, 1}) = 3;
+    tensor1.at({1, 1}) = 7;
+
+    gork::NodeId node1 = graph.input();
+    gork::NodeId node2 = graph.constant({4.0f});
+
+    auto node3 = graph.add(node1, node2);
+
+    gork::CpuGraphExecutor<double> executor{};
+    executor.useGraph(graph);
+
+    std::vector<gork::Tensor<double>> inputs{tensor1};
+
+    executor.compute(inputs, node3);
+
+    auto &result = executor.getValue(node3);
+
+    REQUIRE(result.at({0, 0}) == 5.0);
+    REQUIRE(result.at({1, 0}) == 7.0);
+    REQUIRE(result.at({0, 1}) == 7.0);
+    REQUIRE(result.at({1, 1}) == 11.0);
 }

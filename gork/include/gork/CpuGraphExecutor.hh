@@ -49,6 +49,7 @@ void CpuGraphExecutor<T>::useGraph(Graph &graph) {
     for (size_t i = 0; i < nodeCount; i++) {
         auto node = graph_->get(i);
         if (node.op_ == TensorOp::Constant) {
+            // implicitly calls type converting copy constructor if T isn't a float, apparently
             tensors_.push_back(node.value_.asTensor());
         } else {
             tensors_.push_back(Tensor<T>{});

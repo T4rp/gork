@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <variant>
+#include <vector>
 
 namespace gork {
 
@@ -59,7 +60,7 @@ template <typename T>
 Tensor<T> Value<T>::asTensor() {
     switch (ty_) {
     case ValueType::Scalar: {
-        Tensor<T> tensor{};
+        Tensor<T> tensor{std::vector<size_t>{}};
         tensor.at({}) = std::get<T>(val_);
         return tensor;
     }

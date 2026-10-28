@@ -22,6 +22,11 @@ class Tensor {
     Tensor();
     Tensor(std::vector<size_t> tensor_shape);
     Tensor(std::initializer_list<size_t> tensor_shape);
+
+    /// Create a new tensor with casted data
+    template <typename R>
+    Tensor(const Tensor<R> &);
+
     Tensor(const Tensor<T> &other);
     Tensor(Tensor<T> &&other) noexcept;
     Tensor<T> &operator=(const Tensor<T> &other);
@@ -75,6 +80,20 @@ Tensor<T>::Tensor(std::initializer_list<size_t> tensor_shape) {
     for (size_t i = 0; i < shape_.size(); i++) {
         strides_.push_back(stride);
         stride *= shape_[i];
+    }
+}
+
+template <typename T>
+template <typename R>
+Tensor<T>::Tensor(const Tensor<R> &other) {
+    shape_ = other.shape_;
+    size_ = other.size_;
+    strides_ = other.strides_;
+
+    data_ = new T[size_];
+
+    for (size_t i = 0; i < size_; i++) {
+        data_[i] = static_cast<T>(other.data_[i]);
     }
 }
 
