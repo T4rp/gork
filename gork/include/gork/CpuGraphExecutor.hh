@@ -17,14 +17,14 @@ class CpuGraphExecutor : public GraphExecutor<T> {
     CpuGraphExecutor();
     ~CpuGraphExecutor();
 
-    void useGraph(Graph<T> &graph);
-    const Graph<T> *getGraph() const;
+    void useGraph(Graph &graph);
+    const Graph *getGraph() const;
     Tensor<T> &getValue(NodeId nodeId);
 
     void compute(const std::vector<Tensor<T>> &inputs, NodeId node);
 
   private:
-    Graph<T> *graph_;
+    Graph *graph_;
     std::vector<Tensor<T>> tensors_;
 };
 
@@ -39,7 +39,7 @@ CpuGraphExecutor<T>::~CpuGraphExecutor() {
 }
 
 template <typename T>
-void CpuGraphExecutor<T>::useGraph(Graph<T> &graph) {
+void CpuGraphExecutor<T>::useGraph(Graph &graph) {
     graph_ = &graph;
     tensors_ = std::vector<Tensor<T>>{};
 
@@ -57,7 +57,7 @@ void CpuGraphExecutor<T>::useGraph(Graph<T> &graph) {
 }
 
 template <typename T>
-const Graph<T> *CpuGraphExecutor<T>::getGraph() const {
+const Graph *CpuGraphExecutor<T>::getGraph() const {
     return graph_;
 }
 

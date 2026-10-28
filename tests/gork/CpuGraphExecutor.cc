@@ -5,7 +5,7 @@
 #include <vector>
 
 TEST_CASE("it should take graphs", "[CpuGraphExecutor]") {
-    gork::Graph<float> graph{};
+    gork::Graph graph{};
     gork::CpuGraphExecutor<float> executor{};
     executor.useGraph(graph);
 
@@ -13,7 +13,7 @@ TEST_CASE("it should take graphs", "[CpuGraphExecutor]") {
 }
 
 TEST_CASE("It should compute matmul", "[CpuGraphExecutor]") {
-    gork::Graph<float> graph{};
+    gork::Graph graph{};
 
     gork::Tensor<float> tensor1{std::vector<size_t>{1, 4}};
     gork::Tensor<float> tensor2{std::vector<size_t>{4, 2}};
@@ -52,7 +52,7 @@ TEST_CASE("It should compute matmul", "[CpuGraphExecutor]") {
 }
 
 TEST_CASE("It should compute add", "[CpuGraphExecutor]") {
-    gork::Graph<float> graph{};
+    gork::Graph graph{};
 
     gork::Tensor<float> tensor1{std::vector<size_t>{2, 2}};
     gork::Tensor<float> tensor2{std::vector<size_t>{2, 2}};
@@ -87,7 +87,7 @@ TEST_CASE("It should compute add", "[CpuGraphExecutor]") {
 }
 
 TEST_CASE("It should compute Relu", "[CpuGraphExecutor]") {
-    gork::Graph<float> graph{};
+    gork::Graph graph{};
 
     gork::Tensor<float> tensor1{std::vector<size_t>{2, 3}};
 
@@ -114,7 +114,7 @@ TEST_CASE("It should compute Relu", "[CpuGraphExecutor]") {
 }
 
 TEST_CASE("It should compute horizontal broadcast", "[CpuGraphExecutor]") {
-    gork::Graph<float> graph{};
+    gork::Graph graph{};
 
     gork::Tensor<float> tensor1{std::vector<size_t>{3, 1}};
 
@@ -147,7 +147,7 @@ TEST_CASE("It should compute horizontal broadcast", "[CpuGraphExecutor]") {
 }
 
 TEST_CASE("It should compute chains", "[CpuGraphExecutor]") {
-    using Graph = gork::Graph<float>;
+    using Graph = gork::Graph;
     using Tensor = gork::Tensor<float>;
 
     Graph graph{};
