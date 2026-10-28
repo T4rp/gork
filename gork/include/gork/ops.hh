@@ -276,7 +276,7 @@ Tensor<T> hBroadcast(const Tensor<T> &tensor, size_t count) {
 
 template <typename T>
 Tensor<T> hReduce(const Tensor<T> &tensor) {
-    Tensor<T> newTensor{std::vector<size_t>{tensor.shape_[0], 0}};
+    Tensor<T> newTensor{std::vector<size_t>{tensor.shape_[0], 1}};
 
     for (size_t i = 0; i < tensor.shape_[0]; i++) {
         T sum = 0;
