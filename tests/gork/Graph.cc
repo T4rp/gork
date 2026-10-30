@@ -3,20 +3,22 @@
 #include <catch2/catch_test_macros.hpp>
 #include <vector>
 
+namespace gork {
+
 TEST_CASE("Graphs can be made", "[Graph]") {
-    gork::Graph graph{};
+    Graph graph{};
     REQUIRE(graph.getNodes().size() == 0);
 }
 
 TEST_CASE("Nodes can be inserted", "[Graph]") {
-    gork::Graph graph{};
+    Graph graph{};
 
     graph.input();
     REQUIRE(graph.getNodes().size() == 1);
 }
 
 TEST_CASE("Graph inputs are recorded", "[Graph]") {
-    gork::Graph graph{};
+    Graph graph{};
 
     auto nodeId = graph.input();
 
@@ -24,7 +26,7 @@ TEST_CASE("Graph inputs are recorded", "[Graph]") {
 }
 
 TEST_CASE("Graph outputs are recorded", "[Graph]") {
-    gork::Graph graph{};
+    Graph graph{};
 
     auto inputId = graph.input();
     auto outputId = graph.output(inputId);
@@ -33,10 +35,10 @@ TEST_CASE("Graph outputs are recorded", "[Graph]") {
 }
 
 TEST_CASE("Nodes can be multiplied", "[Graph]") {
-    gork::Graph graph{};
+    Graph graph{};
 
-    gork::NodeId node1 = graph.input();
-    gork::NodeId node2 = graph.input();
+    NodeId node1 = graph.input();
+    NodeId node2 = graph.input();
 
     graph.matmul(node1, node2);
 
@@ -44,10 +46,10 @@ TEST_CASE("Nodes can be multiplied", "[Graph]") {
 }
 
 TEST_CASE("Nodes can be added", "[Graph]") {
-    gork::Graph graph{};
+    Graph graph{};
 
-    gork::NodeId node1 = graph.input();
-    gork::NodeId node2 = graph.input();
+    NodeId node1 = graph.input();
+    NodeId node2 = graph.input();
 
     graph.add(node1, node2);
 
@@ -55,16 +57,16 @@ TEST_CASE("Nodes can be added", "[Graph]") {
 }
 
 TEST_CASE("Nodes can be retrieved", "[Graph]") {
-    gork::Graph graph{};
+    Graph graph{};
 
-    gork::NodeId node1 = graph.input();
-    gork::Graph::Node &node = graph.get(node1);
+    NodeId node1 = graph.input();
+    Graph::Node &node = graph.get(node1);
 
-    REQUIRE(node.op_ == gork::TensorOp::Input);
+    REQUIRE(node.op_ == TensorOp::Input);
 }
 
 TEST_CASE("Graph can build backwards pass", "[Graph]") {
-    gork::Graph graph{};
+    Graph graph{};
 
     auto node1 = graph.input();
     auto node2 = graph.input();
@@ -74,3 +76,5 @@ TEST_CASE("Graph can build backwards pass", "[Graph]") {
 
     // TODO: add test cases
 }
+
+} // namespace gork

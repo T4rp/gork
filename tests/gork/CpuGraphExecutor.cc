@@ -6,19 +6,21 @@
 #include <unordered_map>
 #include <vector>
 
+namespace gork {
+
 TEST_CASE("it should take graphs", "[CpuGraphExecutor]") {
-    gork::Graph graph{};
-    gork::CpuGraphExecutor<float> executor{};
+    Graph graph{};
+    CpuGraphExecutor<float> executor{};
     executor.useGraph(graph);
 
     REQUIRE(&graph == executor.getGraph());
 }
 
 TEST_CASE("It should compute matmul", "[CpuGraphExecutor]") {
-    gork::Graph graph{};
+    Graph graph{};
 
-    gork::Tensor<float> tensor1{std::vector<size_t>{1, 4}};
-    gork::Tensor<float> tensor2{std::vector<size_t>{4, 2}};
+    Tensor<float> tensor1{std::vector<size_t>{1, 4}};
+    Tensor<float> tensor2{std::vector<size_t>{4, 2}};
 
     tensor1.at({0, 0}) = 1;
     tensor1.at({0, 1}) = 2;
@@ -34,14 +36,14 @@ TEST_CASE("It should compute matmul", "[CpuGraphExecutor]") {
     tensor2.at({2, 1}) = 1;
     tensor2.at({3, 1}) = 0;
 
-    gork::NodeId node1 = graph.input();
-    gork::NodeId node2 = graph.input();
+    NodeId node1 = graph.input();
+    NodeId node2 = graph.input();
     auto node3 = graph.matmul(node1, node2);
 
-    gork::CpuGraphExecutor<float> executor{};
+    CpuGraphExecutor<float> executor{};
     executor.useGraph(graph);
 
-    std::vector<gork::Tensor<float>> inputs{tensor1, tensor2};
+    std::vector<Tensor<float>> inputs{tensor1, tensor2};
     executor.compute(inputs, node3);
 
     auto &result = executor.getValue(node3);
@@ -54,10 +56,10 @@ TEST_CASE("It should compute matmul", "[CpuGraphExecutor]") {
 }
 
 TEST_CASE("It should compute add", "[CpuGraphExecutor]") {
-    gork::Graph graph{};
+    Graph graph{};
 
-    gork::Tensor<float> tensor1{std::vector<size_t>{2, 2}};
-    gork::Tensor<float> tensor2{std::vector<size_t>{2, 2}};
+    Tensor<float> tensor1{std::vector<size_t>{2, 2}};
+    Tensor<float> tensor2{std::vector<size_t>{2, 2}};
 
     tensor1.at({0, 0}) = 1;
     tensor1.at({1, 0}) = 3;
@@ -69,14 +71,14 @@ TEST_CASE("It should compute add", "[CpuGraphExecutor]") {
     tensor2.at({0, 1}) = 5;
     tensor2.at({1, 1}) = 1;
 
-    gork::NodeId node1 = graph.input();
-    gork::NodeId node2 = graph.input();
+    NodeId node1 = graph.input();
+    NodeId node2 = graph.input();
     auto node3 = graph.add(node1, node2);
 
-    gork::CpuGraphExecutor<float> executor{};
+    CpuGraphExecutor<float> executor{};
     executor.useGraph(graph);
 
-    std::vector<gork::Tensor<float>> inputs{tensor1, tensor2};
+    std::vector<Tensor<float>> inputs{tensor1, tensor2};
 
     executor.compute(inputs, node3);
 
@@ -89,22 +91,22 @@ TEST_CASE("It should compute add", "[CpuGraphExecutor]") {
 }
 
 TEST_CASE("It should compute Relu", "[CpuGraphExecutor]") {
-    gork::Graph graph{};
+    Graph graph{};
 
-    gork::Tensor<float> tensor1{std::vector<size_t>{2, 3}};
+    Tensor<float> tensor1{std::vector<size_t>{2, 3}};
 
     tensor1.at({0, 0}) = 6;
     tensor1.at({1, 0}) = 7;
     tensor1.at({0, 1}) = -6;
     tensor1.at({1, 1}) = -7;
 
-    gork::NodeId node1 = graph.input();
+    NodeId node1 = graph.input();
     auto node2 = graph.relu(node1);
 
-    gork::CpuGraphExecutor<float> executor{};
+    CpuGraphExecutor<float> executor{};
     executor.useGraph(graph);
 
-    std::vector<gork::Tensor<float>> inputs{tensor1};
+    std::vector<Tensor<float>> inputs{tensor1};
     executor.compute(inputs, node2);
 
     auto &result = executor.getValue(node2);
@@ -116,21 +118,21 @@ TEST_CASE("It should compute Relu", "[CpuGraphExecutor]") {
 }
 
 TEST_CASE("It should compute horizontal broadcast", "[CpuGraphExecutor]") {
-    gork::Graph graph{};
+    Graph graph{};
 
-    gork::Tensor<float> tensor1{std::vector<size_t>{3, 1}};
+    Tensor<float> tensor1{std::vector<size_t>{3, 1}};
 
     tensor1.at({0, 0}) = 6.0;
     tensor1.at({1, 0}) = 7.0;
     tensor1.at({2, 0}) = 8.0;
 
-    gork::NodeId node1 = graph.input();
+    NodeId node1 = graph.input();
     auto node2 = graph.hBroadcast(node1, 3);
 
-    gork::CpuGraphExecutor<float> executor{};
+    CpuGraphExecutor<float> executor{};
     executor.useGraph(graph);
 
-    std::vector<gork::Tensor<float>> inputs{tensor1};
+    std::vector<Tensor<float>> inputs{tensor1};
     executor.compute(inputs, node2);
 
     auto &result = executor.getValue(node2);
@@ -149,8 +151,8 @@ TEST_CASE("It should compute horizontal broadcast", "[CpuGraphExecutor]") {
 }
 
 TEST_CASE("It should compute chains", "[CpuGraphExecutor]") {
-    using Graph = gork::Graph;
-    using Tensor = gork::Tensor<float>;
+    using Graph = Graph;
+    using Tensor = Tensor<float>;
 
     Graph graph{};
 
@@ -181,7 +183,7 @@ TEST_CASE("It should compute chains", "[CpuGraphExecutor]") {
     auto step2 = graph.add(step1, biasBroadcasted);
     auto step3 = graph.relu(step2);
 
-    gork::CpuGraphExecutor<float> executor{};
+    CpuGraphExecutor<float> executor{};
     executor.useGraph(graph);
 
     std::vector<Tensor> inputs{input, weights, bias};
@@ -193,25 +195,25 @@ TEST_CASE("It should compute chains", "[CpuGraphExecutor]") {
 }
 
 TEST_CASE("It should work with a different numeric type", "[CpuGraphExecutor]") {
-    gork::Graph graph{};
+    Graph graph{};
 
-    gork::Tensor<double> tensor1{std::vector<size_t>{2, 2}};
-    gork::Tensor<double> tensor2{std::vector<size_t>{2, 2}};
+    Tensor<double> tensor1{std::vector<size_t>{2, 2}};
+    Tensor<double> tensor2{std::vector<size_t>{2, 2}};
 
     tensor1.at({0, 0}) = 1;
     tensor1.at({1, 0}) = 3;
     tensor1.at({0, 1}) = 3;
     tensor1.at({1, 1}) = 7;
 
-    gork::NodeId node1 = graph.input();
-    gork::NodeId node2 = graph.constant({4.0f});
+    NodeId node1 = graph.input();
+    NodeId node2 = graph.constant({4.0f});
 
     auto node3 = graph.add(node1, node2);
 
-    gork::CpuGraphExecutor<double> executor{};
+    CpuGraphExecutor<double> executor{};
     executor.useGraph(graph);
 
-    std::vector<gork::Tensor<double>> inputs{tensor1};
+    std::vector<Tensor<double>> inputs{tensor1};
 
     executor.compute(inputs, node3);
 
@@ -224,7 +226,7 @@ TEST_CASE("It should work with a different numeric type", "[CpuGraphExecutor]") 
 }
 
 TEST_CASE("Backwards relu should compute", "[CpuGraphExecutor]") {
-    gork::Graph graph{};
+    Graph graph{};
 
     auto node1 = graph.input();
     auto node2 = graph.relu(node1);
@@ -232,16 +234,16 @@ TEST_CASE("Backwards relu should compute", "[CpuGraphExecutor]") {
 
     auto node3 = gradientNode[node1];
 
-    gork::CpuGraphExecutor<float> executor{};
+    CpuGraphExecutor<float> executor{};
     executor.useGraph(graph);
 
-    gork::Tensor<float> tensor1{std::vector<size_t>{2, 3}};
+    Tensor<float> tensor1{std::vector<size_t>{2, 3}};
     tensor1.at({0, 0}) = 6;
     tensor1.at({1, 0}) = 7;
     tensor1.at({0, 1}) = -6;
     tensor1.at({1, 1}) = -7;
 
-    std::vector<gork::Tensor<float>> inputs{tensor1};
+    std::vector<Tensor<float>> inputs{tensor1};
 
     executor.compute(inputs, node2);
     auto &forwardResult = executor.getValue(node2);
@@ -261,7 +263,7 @@ TEST_CASE("Backwards relu should compute", "[CpuGraphExecutor]") {
 }
 
 TEST_CASE("Backwards vertical reduce should compute", "[CpuGraphExecutor]") {
-    gork::Graph graph{};
+    Graph graph{};
 
     auto node1 = graph.input();
     auto node2 = graph.vReduce(node1);
@@ -269,10 +271,10 @@ TEST_CASE("Backwards vertical reduce should compute", "[CpuGraphExecutor]") {
 
     auto node3 = gradientNode[node1];
 
-    gork::CpuGraphExecutor<float> executor{};
+    CpuGraphExecutor<float> executor{};
     executor.useGraph(graph);
 
-    gork::Tensor<float> tensor1{{4, 3}};
+    Tensor<float> tensor1{{4, 3}};
     tensor1.at({0, 0}) = 1.0;
     tensor1.at({1, 0}) = 2.0;
     tensor1.at({2, 0}) = 3.0;
@@ -288,7 +290,7 @@ TEST_CASE("Backwards vertical reduce should compute", "[CpuGraphExecutor]") {
     tensor1.at({2, 2}) = 4.0;
     tensor1.at({3, 2}) = 7.0;
 
-    std::vector<gork::Tensor<float>> inputs{tensor1};
+    std::vector<Tensor<float>> inputs{tensor1};
 
     executor.compute(inputs, node2);
     auto &forwardResult = executor.getValue(node2);
@@ -314,7 +316,7 @@ TEST_CASE("Backwards vertical reduce should compute", "[CpuGraphExecutor]") {
 }
 
 TEST_CASE("Backwards horizontal reduce should compute", "[CpuGraphExecutor]") {
-    gork::Graph graph{};
+    Graph graph{};
 
     auto node1 = graph.input();
     auto node2 = graph.hReduce(node1);
@@ -322,10 +324,10 @@ TEST_CASE("Backwards horizontal reduce should compute", "[CpuGraphExecutor]") {
 
     auto node3 = gradientNode[node1];
 
-    gork::CpuGraphExecutor<float> executor{};
+    CpuGraphExecutor<float> executor{};
     executor.useGraph(graph);
 
-    gork::Tensor<float> tensor1{{4, 3}};
+    Tensor<float> tensor1{{4, 3}};
     tensor1.at({0, 0}) = 1.0;
     tensor1.at({1, 0}) = 2.0;
     tensor1.at({2, 0}) = 3.0;
@@ -341,7 +343,7 @@ TEST_CASE("Backwards horizontal reduce should compute", "[CpuGraphExecutor]") {
     tensor1.at({2, 2}) = 4.0;
     tensor1.at({3, 2}) = 7.0;
 
-    std::vector<gork::Tensor<float>> inputs{tensor1};
+    std::vector<Tensor<float>> inputs{tensor1};
 
     executor.compute(inputs, node2);
     auto &forwardResult = executor.getValue(node2);
@@ -369,3 +371,5 @@ TEST_CASE("Backwards horizontal reduce should compute", "[CpuGraphExecutor]") {
     REQUIRE(gradientResult.at({2, 2}) == 1.0);
     REQUIRE(gradientResult.at({3, 2}) == 1.0);
 }
+
+} // namespace gork

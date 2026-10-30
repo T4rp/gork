@@ -4,36 +4,38 @@
 #include <sstream>
 #include <vector>
 
+namespace gork {
+
 TEST_CASE("Tensors can be made", "[Tensor]") {
     std::vector<size_t> shape{256, 128};
 
-    gork::Tensor<float> tensor1{shape}; // copy vector
+    Tensor<float> tensor1{shape}; // copy vector
     REQUIRE(tensor1.shape_[0] == 256);
     REQUIRE(tensor1.shape_[1] == 128);
 
-    gork::Tensor<float> tensor2{std::move(shape)}; // move vector
+    Tensor<float> tensor2{std::move(shape)}; // move vector
     REQUIRE(tensor2.shape_[0] == 256);
     REQUIRE(tensor2.shape_[1] == 128);
 
-    gork::Tensor<float> tensor3{{256, 128}}; // rvalue
+    Tensor<float> tensor3{{256, 128}}; // rvalue
     REQUIRE(tensor3.shape_[0] == 256);
     REQUIRE(tensor3.shape_[1] == 128);
 
-    gork::Tensor<float> tensor4{256, 128}; // list initalizer
+    Tensor<float> tensor4{256, 128}; // list initalizer
     REQUIRE(tensor4.shape_[0] == 256);
     REQUIRE(tensor4.shape_[1] == 128);
 }
 
 TEST_CASE("Tensors values can be set", "[Tensor]") {
     std::vector<size_t> shape{256, 128};
-    gork::Tensor<float> tensor{shape};
+    Tensor<float> tensor{shape};
     tensor.at({200, 100}) = 4.0;
     REQUIRE(tensor.at({200, 100}) == 4.0);
 }
 
 TEST_CASE("Tensors can be dumped", "[Tensor]") {
     std::vector<size_t> shape{2, 2};
-    gork::Tensor<float> tensor{shape};
+    Tensor<float> tensor{shape};
     tensor.at({0, 0}) = 1;
     tensor.at({1, 0}) = 2;
     tensor.at({0, 1}) = 3;
@@ -49,8 +51,10 @@ TEST_CASE("Tensors can be dumped", "[Tensor]") {
 }
 
 TEST_CASE("Tensors can work as scalars", "[Tensor]") {
-    gork::Tensor<float> tensor{std::vector<size_t>{}};
+    Tensor<float> tensor{std::vector<size_t>{}};
     tensor.at({}) = 20.0;
 
     REQUIRE(tensor.at({}) == 20.0);
 }
+
+} // namespace gork
