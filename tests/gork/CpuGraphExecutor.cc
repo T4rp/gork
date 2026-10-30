@@ -3,6 +3,7 @@
 #include "gork/Value.hh"
 #include <catch2/catch_test_macros.hpp>
 #include <gork/CpuGraphExecutor.hh>
+#include <unordered_map>
 #include <vector>
 
 TEST_CASE("it should take graphs", "[CpuGraphExecutor]") {
@@ -220,4 +221,41 @@ TEST_CASE("It should work with a different numeric type", "[CpuGraphExecutor]") 
     REQUIRE(result.at({1, 0}) == 7.0);
     REQUIRE(result.at({0, 1}) == 7.0);
     REQUIRE(result.at({1, 1}) == 11.0);
+}
+
+TEST_CASE("Backwards relu should compute", "[CpuGraphExecutor]") {
+    gork::Graph graph{};
+
+    auto node1 = graph.input();
+    auto node2 = graph.relu(node1);
+    auto gradientNode = graph.mapGradientNodes(node2);
+
+    auto node3 = gradientNode[node1];
+
+    gork::CpuGraphExecutor<float> executor{};
+    executor.useGraph(graph);
+
+    gork::Tensor<float> tensor1{std::vector<size_t>{2, 3}};
+    tensor1.at({0, 0}) = 6;
+    tensor1.at({1, 0}) = 7;
+    tensor1.at({0, 1}) = -6;
+    tensor1.at({1, 1}) = -7;
+
+    std::vector<gork::Tensor<float>> inputs{tensor1};
+
+    executor.compute(inputs, node2);
+    auto &forwardResult = executor.getValue(node2);
+
+    REQUIRE(forwardResult.at({0, 0}) == 6.0);
+    REQUIRE(forwardResult.at({1, 0}) == 7.0);
+    REQUIRE(forwardResult.at({0, 1}) == 0.0);
+    REQUIRE(forwardResult.at({1, 1}) == 0.0);
+
+    executor.compute(inputs, node3);
+    auto &gradientResult = executor.getValue(node3);
+
+    REQUIRE(gradientResult.at({0, 0}) == 1.0);
+    REQUIRE(gradientResult.at({1, 0}) == 1.0);
+    REQUIRE(gradientResult.at({0, 1}) == 0.0);
+    REQUIRE(gradientResult.at({1, 1}) == 0.0);
 }
