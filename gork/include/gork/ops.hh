@@ -27,6 +27,7 @@ enum class TensorOp {
     HReduce,
     VBroadcast,
     VReduce,
+    GetDim,
 };
 
 namespace ops {

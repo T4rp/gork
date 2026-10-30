@@ -4,6 +4,7 @@
 #include "gork/Graph.hh"
 #include "gork/GraphExecutor.hh"
 #include "gork/Tensor.hh"
+#include "gork/Value.hh"
 #include "gork/ops.hh"
 #include <cstddef>
 #include <stdexcept>
@@ -164,9 +165,9 @@ void CpuGraphExecutor<T>::compute(const std::vector<Tensor<T>> &inputs, NodeId n
             auto &child0 = tensors_[node.inputs_[0]];
 
             auto countNodeId = node.inputs_[1];
-            auto &node = graph_->get(countNodeId);
+            auto &countNode = graph_->get(countNodeId);
 
-            size_t count = std::get<size_t>(node.value_.val_);
+            size_t count = std::get<size_t>(countNode.value_.val_);
             *tensor = gork::ops::hBroadcast(child0, count);
 
             break;
@@ -180,9 +181,9 @@ void CpuGraphExecutor<T>::compute(const std::vector<Tensor<T>> &inputs, NodeId n
             auto &child0 = tensors_[node.inputs_[0]];
 
             auto countNodeId = node.inputs_[1];
-            auto &node = graph_->get(countNodeId);
+            auto &countNode = graph_->get(countNodeId);
 
-            size_t count = std::get<size_t>(node.value_.val_);
+            size_t count = std::get<size_t>(countNode.value_.val_);
             *tensor = gork::ops::vBroadcast(child0, count);
 
             break;
@@ -190,6 +191,18 @@ void CpuGraphExecutor<T>::compute(const std::vector<Tensor<T>> &inputs, NodeId n
         case TensorOp::VReduce: {
             auto &child0 = tensors_[node.inputs_[0]];
             *tensor = gork::ops::vReduce(child0);
+            break;
+        }
+        case TensorOp::GetDim: {
+            auto &child0 = tensors_[node.inputs_[0]];
+
+            auto countNodeId = node.inputs_[1];
+            auto &countNode = graph_->get(countNodeId);
+
+            size_t count = std::get<size_t>(countNode.value_.val_);
+            size_t dim = child0.shape_[count];
+            node.value_ = Value<float>(dim);
+
             break;
         }
         }

@@ -1,4 +1,6 @@
 #include "gork/Graph.hh"
+#include "gork/Value.hh"
+#include <cassert>
 
 namespace gork {
 
@@ -104,6 +106,11 @@ NodeId Graph::hBroadcast(NodeId nodeId, size_t count) {
     return nodes_.size() - 1;
 };
 
+NodeId Graph::hBroadcast2(NodeId nodeId, NodeId countNode) {
+    nodes_.emplace_back(TensorOp::HBroadcast, std::vector<NodeId>{nodeId, countNode});
+    return nodes_.size() - 1;
+};
+
 NodeId Graph::hReduce(NodeId nodeId) {
     nodes_.emplace_back(TensorOp::HReduce, std::vector<NodeId>{nodeId});
     return nodes_.size() - 1;
@@ -115,10 +122,22 @@ NodeId Graph::vBroadcast(NodeId nodeId, size_t count) {
     return nodes_.size() - 1;
 };
 
+NodeId Graph::vBroadcast2(NodeId nodeId, NodeId countNode) {
+    nodes_.emplace_back(TensorOp::VBroadcast, std::vector<NodeId>{nodeId, countNode});
+    return nodes_.size() - 1;
+};
+
 NodeId Graph::vReduce(NodeId nodeId) {
     nodes_.emplace_back(TensorOp::VReduce, std::vector<NodeId>{nodeId});
     return nodes_.size() - 1;
 };
+
+NodeId Graph::getDim(NodeId nodeId, size_t dimIndex) {
+    auto countNodeId = constant(Value<float>{dimIndex});
+
+    nodes_.emplace_back(TensorOp::GetDim, std::vector<NodeId>{nodeId, countNodeId});
+    return nodes_.size() - 1;
+}
 
 typename Graph::Node &Graph::get(NodeId id) {
     return nodes_[id];
@@ -186,8 +205,9 @@ std::unordered_map<NodeId, NodeId> Graph::mapGradientNodes(NodeId toCompute) {
             NodeId inode0 = outNode.inputs_[0];
             NodeId inode1 = outNode.inputs_[1];
 
-            auto grad0 = noOp(outNodeGradientId);
-            auto grad1 = noOp(outNodeGradientId);
+            // the add(mul(in, 0.0), grad) step is used to shape the incoming gradient
+            auto grad0 = add(mul(inode0, constant(Value<float>{0.0f})), outNodeGradientId);
+            auto grad1 = add(mul(inode1, constant(Value<float>{0.0f})), outNodeGradientId);
 
             result[inode0] = add(result[inode0], grad0);
             result[inode1] = add(result[inode1], grad1);
@@ -198,8 +218,8 @@ std::unordered_map<NodeId, NodeId> Graph::mapGradientNodes(NodeId toCompute) {
             NodeId inode0 = outNode.inputs_[0];
             NodeId inode1 = outNode.inputs_[1];
 
-            auto grad0 = noOp(outNodeGradientId);
-            auto grad1 = negate(outNodeGradientId);
+            auto grad0 = add(mul(inode0, constant(Value<float>{0.0f})), outNodeGradientId);
+            auto grad1 = add(mul(inode1, constant(Value<float>{0.0f})), negate(outNodeGradientId));
 
             result[inode0] = add(result[inode0], grad0);
             result[inode1] = add(result[inode1], grad1);
@@ -242,12 +262,35 @@ std::unordered_map<NodeId, NodeId> Graph::mapGradientNodes(NodeId toCompute) {
 
             break;
         }
+        case TensorOp::HReduce: {
+            NodeId inode0 = outNode.inputs_[0];
+            NodeId dimensionSizeNode = getDim(inode0, 1);
+
+            auto grad0 =
+                hBroadcast2(add(mul(inode0, constant(Value<float>{0.0f})), outNodeGradientId),
+                            dimensionSizeNode);
+
+            result[inode0] = add(result[inode0], grad0);
+
+            break;
+        }
+        case TensorOp::VReduce: {
+            NodeId inode0 = outNode.inputs_[0];
+            NodeId dimensionSizeNode = getDim(inode0, 0);
+
+            auto grad0 =
+                vBroadcast2(add(mul(inode0, constant(Value<float>{0.0f})), outNodeGradientId),
+                            dimensionSizeNode);
+
+            result[inode0] = add(result[inode0], grad0);
+
+            break;
+        }
+        case TensorOp::GetDim:
         case TensorOp::Transpose:
         case TensorOp::ReluDeriv:
         case TensorOp::ElementwiseSquare:
         case TensorOp::Negate:
-        case TensorOp::HReduce:
-        case TensorOp::VReduce:
             throw std::runtime_error("unimplemented");
         }
     }

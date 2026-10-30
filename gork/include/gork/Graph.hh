@@ -45,9 +45,12 @@ class Graph {
     NodeId reluDeriv(NodeId tensor);
     NodeId negate(NodeId nodeId);
     NodeId hBroadcast(NodeId nodeId, size_t count);
+    NodeId hBroadcast2(NodeId nodeId, NodeId countNode);
     NodeId hReduce(NodeId nodeId);
     NodeId vBroadcast(NodeId nodeId, size_t count);
+    NodeId vBroadcast2(NodeId nodeId, NodeId countNode);
     NodeId vReduce(NodeId nodeId);
+    NodeId getDim(NodeId nodeId, size_t dimIndex);
 
     std::unordered_map<NodeId, NodeId> mapGradientNodes(NodeId toCompute);
 

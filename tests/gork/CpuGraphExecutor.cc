@@ -259,3 +259,113 @@ TEST_CASE("Backwards relu should compute", "[CpuGraphExecutor]") {
     REQUIRE(gradientResult.at({0, 1}) == 0.0);
     REQUIRE(gradientResult.at({1, 1}) == 0.0);
 }
+
+TEST_CASE("Backwards vertical reduce should compute", "[CpuGraphExecutor]") {
+    gork::Graph graph{};
+
+    auto node1 = graph.input();
+    auto node2 = graph.vReduce(node1);
+    auto gradientNode = graph.mapGradientNodes(node2);
+
+    auto node3 = gradientNode[node1];
+
+    gork::CpuGraphExecutor<float> executor{};
+    executor.useGraph(graph);
+
+    gork::Tensor<float> tensor1{{4, 3}};
+    tensor1.at({0, 0}) = 1.0;
+    tensor1.at({1, 0}) = 2.0;
+    tensor1.at({2, 0}) = 3.0;
+    tensor1.at({3, 0}) = 4.0;
+
+    tensor1.at({0, 1}) = 1.0;
+    tensor1.at({1, 1}) = 1.0;
+    tensor1.at({2, 1}) = 1.0;
+    tensor1.at({3, 1}) = 1.0;
+
+    tensor1.at({0, 2}) = 1.0;
+    tensor1.at({1, 2}) = 3.0;
+    tensor1.at({2, 2}) = 4.0;
+    tensor1.at({3, 2}) = 7.0;
+
+    std::vector<gork::Tensor<float>> inputs{tensor1};
+
+    executor.compute(inputs, node2);
+    auto &forwardResult = executor.getValue(node2);
+
+    REQUIRE(forwardResult.at({0, 0}) == 10.0);
+    REQUIRE(forwardResult.at({0, 1}) == 4.0);
+    REQUIRE(forwardResult.at({0, 2}) == 15.0);
+
+    executor.compute(inputs, node3);
+    auto &gradientResult = executor.getValue(node3);
+
+    REQUIRE(gradientResult.at({0, 0}) == 1.0);
+    REQUIRE(gradientResult.at({0, 1}) == 1.0);
+    REQUIRE(gradientResult.at({0, 2}) == 1.0);
+
+    REQUIRE(gradientResult.at({1, 0}) == 1.0);
+    REQUIRE(gradientResult.at({1, 1}) == 1.0);
+    REQUIRE(gradientResult.at({1, 2}) == 1.0);
+
+    REQUIRE(gradientResult.at({2, 0}) == 1.0);
+    REQUIRE(gradientResult.at({2, 1}) == 1.0);
+    REQUIRE(gradientResult.at({2, 2}) == 1.0);
+}
+
+TEST_CASE("Backwards horizontal reduce should compute", "[CpuGraphExecutor]") {
+    gork::Graph graph{};
+
+    auto node1 = graph.input();
+    auto node2 = graph.hReduce(node1);
+    auto gradientNode = graph.mapGradientNodes(node2);
+
+    auto node3 = gradientNode[node1];
+
+    gork::CpuGraphExecutor<float> executor{};
+    executor.useGraph(graph);
+
+    gork::Tensor<float> tensor1{{4, 3}};
+    tensor1.at({0, 0}) = 1.0;
+    tensor1.at({1, 0}) = 2.0;
+    tensor1.at({2, 0}) = 3.0;
+    tensor1.at({3, 0}) = 4.0;
+
+    tensor1.at({0, 1}) = 1.0;
+    tensor1.at({1, 1}) = 1.0;
+    tensor1.at({2, 1}) = 1.0;
+    tensor1.at({3, 1}) = 1.0;
+
+    tensor1.at({0, 2}) = 1.0;
+    tensor1.at({1, 2}) = 3.0;
+    tensor1.at({2, 2}) = 4.0;
+    tensor1.at({3, 2}) = 7.0;
+
+    std::vector<gork::Tensor<float>> inputs{tensor1};
+
+    executor.compute(inputs, node2);
+    auto &forwardResult = executor.getValue(node2);
+
+    REQUIRE(forwardResult.at({0, 0}) == 3.0);
+    REQUIRE(forwardResult.at({1, 0}) == 6.0);
+    REQUIRE(forwardResult.at({2, 0}) == 8.0);
+    REQUIRE(forwardResult.at({3, 0}) == 12.0);
+
+    executor.compute(inputs, node3);
+    auto &gradientResult = executor.getValue(node3);
+
+    REQUIRE(gradientResult.at({0, 0}) == 1.0);
+    REQUIRE(gradientResult.at({1, 0}) == 1.0);
+    REQUIRE(gradientResult.at({2, 0}) == 1.0);
+    REQUIRE(gradientResult.at({3, 0}) == 1.0);
+
+    REQUIRE(gradientResult.at({0, 1}) == 1.0);
+    REQUIRE(gradientResult.at({1, 1}) == 1.0);
+    REQUIRE(gradientResult.at({2, 1}) == 1.0);
+    REQUIRE(gradientResult.at({3, 1}) == 1.0);
+
+    REQUIRE(gradientResult.at({0, 2}) == 1.0);
+    REQUIRE(gradientResult.at({1, 2}) == 1.0);
+    REQUIRE(gradientResult.at({2, 2}) == 1.0);
+    REQUIRE(gradientResult.at({3, 2}) == 1.0);
+}
