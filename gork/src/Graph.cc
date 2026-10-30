@@ -286,10 +286,18 @@ std::unordered_map<NodeId, NodeId> Graph::mapGradientNodes(NodeId toCompute) {
 
             break;
         }
+        case TensorOp::ElementwiseSquare: {
+            NodeId inode0 = outNode.inputs_[0];
+
+            auto grad0 = mul(mul(inode0, constant(Value<float>{2.0f})), outNodeGradientId);
+
+            result[inode0] = add(result[inode0], grad0);
+
+            break;
+        }
         case TensorOp::GetDim:
         case TensorOp::Transpose:
         case TensorOp::ReluDeriv:
-        case TensorOp::ElementwiseSquare:
         case TensorOp::Negate:
             throw std::runtime_error("unimplemented");
         }
