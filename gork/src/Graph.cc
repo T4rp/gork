@@ -85,6 +85,11 @@ NodeId Graph::mul(NodeId lhs, NodeId rhs) {
     return nodes_.size() - 1;
 }
 
+NodeId Graph::elemSquare(NodeId nodeId) {
+nodes_.emplace_back(TensorOp::ElementwiseSquare, std::vector<NodeId>{nodeId});
+    return nodes_.size() - 1;
+}
+
 NodeId Graph::relu(NodeId nodeId) {
     nodes_.emplace_back(TensorOp::Relu, std::vector<NodeId>{nodeId});
     return nodes_.size() - 1;

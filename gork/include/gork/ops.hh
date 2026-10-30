@@ -77,7 +77,7 @@ Tensor<T> transpose(const Tensor<T> &mat) {
 template <typename T>
 Tensor<T> add(const Tensor<T> &lhs, const Tensor<T> &rhs) {
     if (lhs.isScalar() && rhs.isScalar()) {
-        Tensor<T> tensor{};
+        Tensor<T> tensor{std::vector<size_t>{}};
         tensor.data_[0] = lhs.data_[0] + rhs.data_[0];
         return tensor;
     } else if (rhs.isScalar()) {
@@ -114,7 +114,7 @@ Tensor<T> add(const Tensor<T> &lhs, const Tensor<T> &rhs) {
 template <typename T>
 Tensor<T> sub(const Tensor<T> &lhs, const Tensor<T> &rhs) {
     if (lhs.isScalar() && rhs.isScalar()) {
-        Tensor<T> tensor{};
+        Tensor<T> tensor{std::vector<size_t>{}};
         tensor.data_[0] = lhs.data_[0] - rhs.data_[0];
         return tensor;
     } else if (rhs.isScalar()) {
@@ -151,7 +151,7 @@ Tensor<T> sub(const Tensor<T> &lhs, const Tensor<T> &rhs) {
 template <typename T>
 Tensor<T> mul(const Tensor<T> &lhs, const Tensor<T> &rhs) {
     if (lhs.isScalar() && rhs.isScalar()) {
-        Tensor<T> tensor{};
+        Tensor<T> tensor{std::vector<size_t>{}};
         tensor.data_[0] = lhs.data_[0] * rhs.data_[0];
         return tensor;
     } else if (rhs.isScalar()) {

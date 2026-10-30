@@ -2,6 +2,7 @@
 #include "gork/Tensor.hh"
 #include "gork/Value.hh"
 #include <catch2/catch_test_macros.hpp>
+#include <cmath>
 #include <gork/CpuGraphExecutor.hh>
 #include <unordered_map>
 #include <vector>
@@ -188,10 +189,6 @@ TEST_CASE("It should compute chains", "[CpuGraphExecutor]") {
 
     std::vector<Tensor> inputs{input, weights, bias};
     executor.compute(inputs, step3);
-
-    auto &result = executor.getValue(step3);
-
-    result.dump_mat();
 }
 
 TEST_CASE("It should work with a different numeric type", "[CpuGraphExecutor]") {
@@ -372,4 +369,34 @@ TEST_CASE("Backwards horizontal reduce should compute", "[CpuGraphExecutor]") {
     REQUIRE(gradientResult.at({3, 2}) == 1.0);
 }
 
+TEST_CASE("It can compute a MSE loss function", "[CpuGraphExecutor]") {
+    Graph graph{};
+
+    auto prediction = graph.input();
+    auto expected = graph.input();
+
+    auto mse = graph.mul(graph.vReduce(graph.elemSquare(graph.sub(prediction, expected))),
+                         graph.constant(Value<float>{1.0f / 3.0f}));
+
+    CpuGraphExecutor<float> executor{};
+    executor.useGraph(graph);
+
+    Tensor<float> tensor1{{3, 1}};
+    tensor1.at({0, 0}) = 1.0;
+    tensor1.at({1, 0}) = 2.0;
+    tensor1.at({2, 0}) = 3.0;
+
+    Tensor<float> tensor2{{3, 1}};
+    tensor2.at({0, 0}) = 4.0;
+    tensor2.at({1, 0}) = 4.0;
+    tensor2.at({2, 0}) = 4.0;
+
+    std::vector<Tensor<float>> inputs{tensor1, tensor2};
+    executor.compute(inputs, mse);
+
+    auto &result = executor.getValue(mse);
+
+    float shouldBe = 14.0 / 3.0;
+    REQUIRE(std::fabs(result.at({}) - shouldBe) <= 1e-5f);
+}
 } // namespace gork

@@ -41,6 +41,7 @@ class Graph {
     NodeId add(NodeId lhs, NodeId rhs);
     NodeId sub(NodeId lhs, NodeId rhs);
     NodeId mul(NodeId lhs, NodeId rhs);
+    NodeId elemSquare(NodeId nodeId);
     NodeId relu(NodeId tensor);
     NodeId reluDeriv(NodeId tensor);
     NodeId negate(NodeId nodeId);

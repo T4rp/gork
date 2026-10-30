@@ -186,8 +186,14 @@ T &Tensor<T>::at(std::initializer_list<size_t> index) {
     return data_[offset];
 }
 
+// TODO: Make this able to print arbitrarily shaped tensors
 template <typename T>
 void Tensor<T>::dump_mat() {
+    if (size_ == 1) {
+        std::cout << "{ " << data_[0] << " }\n";
+        return;
+    }
+
     size_t m = shape_[0];
     size_t n = shape_[1];
 
