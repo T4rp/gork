@@ -45,7 +45,7 @@ TEST_CASE("Tensors can be dumped", "[Tensor]") {
     std::stringstream buffer;
     std::streambuf *old_buffer = std::cout.rdbuf(buffer.rdbuf());
 
-    tensor.dump_mat();
+    tensor.dump();
 
     std::cout.rdbuf(old_buffer);
 }

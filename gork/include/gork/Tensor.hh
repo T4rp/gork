@@ -38,7 +38,7 @@ class Tensor {
     T at(std::initializer_list<size_t> index) const;
     T &at(std::initializer_list<size_t> index);
 
-    void dump_mat();
+    void dump() const;
 };
 
 template <typename T>
@@ -188,7 +188,7 @@ T &Tensor<T>::at(std::initializer_list<size_t> index) {
 
 // TODO: Make this able to print arbitrarily shaped tensors
 template <typename T>
-void Tensor<T>::dump_mat() {
+void Tensor<T>::dump() const {
     if (size_ == 1) {
         std::cout << "{ " << data_[0] << " }\n";
         return;
