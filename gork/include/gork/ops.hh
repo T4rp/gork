@@ -59,15 +59,17 @@ Tensor<T> matmul(const Tensor<T> &a, const Tensor<T> &b) {
 
 template <typename T>
 Tensor<T> transpose(const Tensor<T> &mat) {
-    size_t m = mat.shape_[1];
-    size_t n = mat.shape_[0];
+    assert(mat.shape_.size() == 2);
 
-    std::vector<size_t> outTensorShape{m, n};
-    Tensor<T> outTensor{outTensor.shape_};
+    size_t m = mat.shape_[0];
+    size_t n = mat.shape_[1];
 
-    for (size_t i = 0; i < m; i++) {
-        for (size_t j = 0; j < n; j++) {
-            outTensor.at({j, i}) = mat.at({i, j});
+    std::vector<size_t> size{n, m};
+    Tensor<T> outTensor{size};
+
+    for (size_t i = 0; i < n; i++) {
+        for (size_t j = 0; j < m; j++) {
+            outTensor.at({i, j}) = mat.at({j, i});
         }
     }
 
