@@ -86,7 +86,7 @@ NodeId Graph::mul(NodeId lhs, NodeId rhs) {
 }
 
 NodeId Graph::elemSquare(NodeId nodeId) {
-nodes_.emplace_back(TensorOp::ElementwiseSquare, std::vector<NodeId>{nodeId});
+    nodes_.emplace_back(TensorOp::ElementwiseSquare, std::vector<NodeId>{nodeId});
     return nodes_.size() - 1;
 }
 
@@ -254,7 +254,7 @@ std::unordered_map<NodeId, NodeId> Graph::mapGradientNodes(NodeId toCompute) {
         case TensorOp::HBroadcast: {
             NodeId inode0 = outNode.inputs_[0];
 
-            auto grad0 = hReduce(outNodeGradientId);
+            auto grad0 = add(mul(inode0, constant(Value<float>{0.0f})), hReduce(outNodeGradientId));
             result[inode0] = add(result[inode0], grad0);
 
             break;
@@ -262,7 +262,7 @@ std::unordered_map<NodeId, NodeId> Graph::mapGradientNodes(NodeId toCompute) {
         case TensorOp::VBroadcast: {
             NodeId inode0 = outNode.inputs_[0];
 
-            auto grad0 = vReduce(outNodeGradientId);
+            auto grad0 = add(mul(inode0, constant(Value<float>{0.0f})), vReduce(outNodeGradientId));
             result[inode0] = add(result[inode0], grad0);
 
             break;
