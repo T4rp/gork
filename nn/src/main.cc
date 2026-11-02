@@ -1,31 +1,55 @@
 #include <iostream>
 #include <vector>
 
+#include "gork/CpuGraphExecutor.hh"
+#include "gork/Graph.hh"
 #include "gork/Tensor.hh"
-#include "gork/ops.hh"
+#include "gork/Value.hh"
+
+const size_t kBatchSize = 16;
 
 int main() {
-    std::vector<size_t> inputShape{1, 2};
+    gork::Graph graph{};
 
-    std::vector<size_t> layer1Shape{2, 4};
-    std::vector<size_t> layer1BiasShape{1, 4};
+    auto input = graph.input();
+    auto expected = graph.input();
+    auto weights1 = graph.input();
+    auto bias1 = graph.input();
+    auto weights2 = graph.input();
+    auto bias2 = graph.input();
 
-    std::vector<size_t> outputShape{4, 2};
-    std::vector<size_t> outputBiasShape{1, 2};
+    bias1 = graph.hBroadcast(bias1, kBatchSize);
+    bias2 = graph.hBroadcast(bias2, kBatchSize);
 
-    gork::Tensor<float> input{inputShape};
-    gork::Tensor<float> layer1Weights{layer1Shape};
-    gork::Tensor<float> layer1Bias{layer1BiasShape};
+    auto layer1 = graph.relu(graph.add(graph.matmul(weights1, input), bias1));
+    auto output = graph.relu(graph.add(graph.matmul(weights2, layer1), bias2));
 
-    gork::Tensor<float> outputWeights{outputShape};
-    gork::Tensor<float> outputBias{outputBiasShape};
+    auto loss = graph.sub(output, expected);
+    loss = graph.elemSquare(loss);
+    loss = graph.hReduce(loss);
+    loss = graph.vReduce(loss);
+    loss = graph.mul(loss,
+                     graph.constant(gork::Value<float>{1.0f / static_cast<float>(kBatchSize * 2)}));
 
-    gork::Tensor<float> a = gork::ops::matmul(input, layer1Weights);
-    gork::Tensor<float> b = gork::ops::broadcastAdd(a, layer1Bias);
-    gork::Tensor<float> c = gork::ops::matmul(b, outputWeights);
-    gork::Tensor<float> d = gork::ops::broadcastAdd(c, outputBias);
+    auto lossGradientMap = graph.mapGradientNodes(loss);
 
-    d.dump_mat();
+    // TODO: Fix gradient calc here
+    auto inputGradient = lossGradientMap[layer1];
+
+    std::vector<gork::Tensor<float>> inputs{
+        {2, kBatchSize}, // input
+        {2, kBatchSize}, // expected
+        {2, 2},          // weights1
+        {2, 1},          // bias1
+        {2, 2},          // weights2
+        {2, 1},          // bias2
+    };
+
+    gork::CpuGraphExecutor<float> executor{};
+    executor.useGraph(graph);
+
+    executor.compute(inputs, loss);
+    executor.compute(inputs, inputGradient);
 
     std::cout << "hello world\n";
     return 0;
