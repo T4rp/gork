@@ -30,6 +30,8 @@ enum class TensorOp {
     GetDim,
 };
 
+const char* toString(TensorOp);
+
 namespace ops {
 
 // TODO: support multiple dimensions

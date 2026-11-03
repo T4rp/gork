@@ -7,6 +7,8 @@
 #include "gork/Value.hh"
 #include "gork/ops.hh"
 #include <cstddef>
+#include <iostream>
+#include <ostream>
 #include <stdexcept>
 #include <vector>
 
@@ -15,6 +17,8 @@ namespace gork {
 template <typename T>
 class CpuGraphExecutor : public GraphExecutor<T> {
   public:
+    bool loggingEnabled_;
+
     CpuGraphExecutor();
     ~CpuGraphExecutor();
 
@@ -31,7 +35,8 @@ class CpuGraphExecutor : public GraphExecutor<T> {
 
 template <typename T>
 CpuGraphExecutor<T>::CpuGraphExecutor()
-    : graph_{nullptr},
+    : loggingEnabled_{false},
+      graph_{nullptr},
       tensors_{} {}
 
 template <typename T>
@@ -53,7 +58,7 @@ void CpuGraphExecutor<T>::useGraph(Graph &graph) {
             // implicitly calls type converting copy constructor if T isn't a float, apparently
             tensors_.push_back(node.value_.asTensor());
         } else {
-            tensors_.push_back(Tensor<T>{});
+            tensors_.push_back(Tensor<T>{std::vector<size_t>{}});
         }
     }
 }
@@ -101,6 +106,17 @@ void CpuGraphExecutor<T>::compute(const std::vector<Tensor<T>> &inputs, NodeId n
         NodeId nodeId = dependencies[i];
         auto &node = graph_->get(nodeId);
         auto *tensor = &tensors_[nodeId];
+
+        if (loggingEnabled_) {
+            std::cout << "Computing: " << toString(node.op_) << "(" << nodeId << ")" << std::endl;
+
+            for (auto input : node.inputs_) {
+                auto &inputNode = graph_->get(input);
+                std::cout << "    Input: " << toString(inputNode.op_) << "(" << input << ")"
+                          << std::endl;
+                std::cout << "    " << tensors_[input] << std::endl;
+            }
+        }
 
         switch (node.op_) {
         case TensorOp::Input:

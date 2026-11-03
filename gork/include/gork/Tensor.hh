@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <initializer_list>
 #include <iostream>
+#include <ostream>
 #include <utility>
 #include <vector>
 
@@ -37,6 +38,9 @@ class Tensor {
     bool isScalar() const;
     T at(std::initializer_list<size_t> index) const;
     T &at(std::initializer_list<size_t> index);
+
+    template <typename U>
+    friend std::ostream &operator<<(std::ostream &, const Tensor<U> &);
 
     void dump() const;
 };
@@ -184,6 +188,30 @@ T &Tensor<T>::at(std::initializer_list<size_t> index) {
     }
 
     return data_[offset];
+}
+
+template <typename T>
+std::ostream &operator<<(std::ostream &os, const Tensor<T> &tensor) {
+    os << "Tensor[";
+
+    for (size_t i = 0; i < tensor.shape_.size(); i++) {
+        os << tensor.shape_[i];
+        if (i < tensor.shape_.size() - 1) {
+            os << ", ";
+        }
+    }
+    os << "]";
+
+    os << " {";
+    for (size_t i = 0; i < tensor.size_; i++) {
+        os << tensor.data_[i];
+        if (i < tensor.size_ - 1) {
+            os << ", ";
+        }
+    }
+    os << "}";
+
+    return os;
 }
 
 // TODO: Make this able to print arbitrarily shaped tensors
