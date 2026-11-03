@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstddef>
 #include <initializer_list>
 #include <iostream>
@@ -40,7 +41,12 @@ class Tensor {
     T at(std::initializer_list<size_t> index) const;
     T &at(std::initializer_list<size_t> index);
     void fill(T);
+
+    // fill with uniform distribution in [-1, 1)
     void fillRand(std::mt19937 &);
+
+    // fill with uniform distribution with He intialization
+    void fillRandHe(std::mt19937 &);
 
     template <typename U>
     friend std::ostream &operator<<(std::ostream &, const Tensor<U> &);
@@ -227,6 +233,15 @@ void Tensor<T>::fill(T value) {
 template <typename T>
 void Tensor<T>::fillRand(std::mt19937 &randGen) {
     std::uniform_real_distribution<> distrib(-1.0, 1.0);
+    for (size_t i = 0; i < size_; i++) {
+        data_[i] = distrib(randGen);
+    }
+}
+
+template <typename T>
+void Tensor<T>::fillRandHe(std::mt19937 &randGen) {
+    float bound = std::sqrt(6.0 / size_);
+    std::uniform_real_distribution<> distrib(-1.0 * bound, 1.0 * bound);
     for (size_t i = 0; i < size_; i++) {
         data_[i] = distrib(randGen);
     }
