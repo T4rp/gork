@@ -29,7 +29,7 @@ class Value {
     Value(Tensor<T> tensor);
     Value(size_t index);
 
-    Tensor<T> asTensor();
+    Tensor<T> asTensor() const;
 };
 
 template <typename T>
@@ -57,7 +57,7 @@ Value<T>::~Value() {
 };
 
 template <typename T>
-Tensor<T> Value<T>::asTensor() {
+Tensor<T> Value<T>::asTensor() const {
     switch (ty_) {
     case ValueType::Scalar: {
         Tensor<T> tensor{std::vector<size_t>{}};
@@ -67,8 +67,13 @@ Tensor<T> Value<T>::asTensor() {
     case ValueType::Tensor: {
         return std::get<Tensor<T>>(val_);
     }
+    case ValueType::Index: {
+        Tensor<T> tensor{std::vector<size_t>{}};
+        tensor.at({}) = static_cast<float>(std::get<size_t>(val_));
+        return tensor;
+    }
     default:
-        return Tensor<T>{};
+        return Tensor<T>{std::vector<size_t>{}};
     }
 };
 
