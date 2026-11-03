@@ -30,7 +30,7 @@ enum class TensorOp {
     GetDim,
 };
 
-const char* toString(TensorOp);
+const char *toString(TensorOp);
 
 namespace ops {
 
@@ -270,15 +270,22 @@ Tensor<T> negate(const Tensor<T> &tensor) {
 
 template <typename T>
 Tensor<T> hBroadcast(const Tensor<T> &tensor, size_t count) {
-    Tensor<T> newTensor{std::vector<size_t>{tensor.shape_[0], count}};
-
-    for (size_t j = 0; j < newTensor.shape_[1]; j++) {
-        for (size_t i = 0; i < newTensor.shape_[0]; i++) {
-            newTensor.at({i, j}) = tensor.at({i, 0});
+    if (tensor.isScalar()) {
+        Tensor<T> newTensor{std::vector<size_t>{1, count}};
+        T scalar = tensor.data_[0];
+        for (size_t i = 0; i < count; i++) {
+            newTensor.at({0, i}) = scalar;
         }
+        return newTensor;
+    } else {
+        Tensor<T> newTensor{std::vector<size_t>{tensor.shape_[0], count}};
+        for (size_t j = 0; j < newTensor.shape_[1]; j++) {
+            for (size_t i = 0; i < newTensor.shape_[0]; i++) {
+                newTensor.at({i, j}) = tensor.at({i, 0});
+            }
+        }
+        return newTensor;
     }
-
-    return newTensor;
 }
 
 template <typename T>
@@ -298,16 +305,25 @@ Tensor<T> hReduce(const Tensor<T> &tensor) {
 
 template <typename T>
 Tensor<T> vBroadcast(const Tensor<T> &tensor, size_t count) {
-    Tensor<T> newTensor{std::vector<size_t>{count, tensor.shape_[1]}};
-
-    for (size_t j = 0; j < newTensor.shape_[1]; j++) {
-        T colVal = tensor.at({0, j});
-        for (size_t i = 0; i < newTensor.shape_[0]; i++) {
-            newTensor.at({i, j}) = colVal;
+    if (tensor.isScalar()) {
+        Tensor<T> newTensor{std::vector<size_t>{count, 1}};
+        T scalar = tensor.data_[0];
+        for (size_t i = 0; i < count; i++) {
+            newTensor.at({i, 0}) = scalar;
         }
-    }
+        return newTensor;
+    } else {
+        Tensor<T> newTensor{std::vector<size_t>{count, tensor.shape_[1]}};
 
-    return newTensor;
+        for (size_t j = 0; j < newTensor.shape_[1]; j++) {
+            T colVal = tensor.at({0, j});
+            for (size_t i = 0; i < newTensor.shape_[0]; i++) {
+                newTensor.at({i, j}) = colVal;
+            }
+        }
+
+        return newTensor;
+    }
 }
 
 template <typename T>
