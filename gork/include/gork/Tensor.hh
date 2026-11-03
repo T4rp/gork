@@ -38,6 +38,7 @@ class Tensor {
     bool isScalar() const;
     T at(std::initializer_list<size_t> index) const;
     T &at(std::initializer_list<size_t> index);
+    void fill(T);
 
     template <typename U>
     friend std::ostream &operator<<(std::ostream &, const Tensor<U> &);
@@ -212,6 +213,13 @@ std::ostream &operator<<(std::ostream &os, const Tensor<T> &tensor) {
     os << "}";
 
     return os;
+}
+
+template <typename T>
+void Tensor<T>::fill(T value) {
+    for (size_t i = 0; i < size_; i++) {
+        data_[i] = value;
+    }
 }
 
 // TODO: Make this able to print arbitrarily shaped tensors
