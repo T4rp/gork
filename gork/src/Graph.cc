@@ -173,7 +173,7 @@ std::unordered_map<NodeId, NodeId> Graph::mapGradientNodes(NodeId toCompute) {
     auto intialGradient = constant(Value{1.0f});
     result[toCompute] = intialGradient;
 
-    for (size_t i = dependencies.size(); i--;) {
+    for (size_t i = 0; i < dependencies.size(); i++) {
         NodeId nodeId = dependencies[i];
         Node &outNode = get(nodeId);
 
@@ -271,9 +271,8 @@ std::unordered_map<NodeId, NodeId> Graph::mapGradientNodes(NodeId toCompute) {
             NodeId inode0 = outNode.inputs_[0];
             NodeId dimensionSizeNode = getDim(inode0, 1);
 
-            auto grad0 =
-                hBroadcast2(add(mul(inode0, constant(Value<float>{0.0f})), outNodeGradientId),
-                            dimensionSizeNode);
+            auto grad0 = add(mul(inode0, constant(Value<float>{0.0f})),
+                             hBroadcast2(outNodeGradientId, dimensionSizeNode));
 
             result[inode0] = add(result[inode0], grad0);
 
@@ -283,9 +282,8 @@ std::unordered_map<NodeId, NodeId> Graph::mapGradientNodes(NodeId toCompute) {
             NodeId inode0 = outNode.inputs_[0];
             NodeId dimensionSizeNode = getDim(inode0, 0);
 
-            auto grad0 =
-                vBroadcast2(add(mul(inode0, constant(Value<float>{0.0f})), outNodeGradientId),
-                            dimensionSizeNode);
+            auto grad0 = add(mul(inode0, constant(Value<float>{0.0f})),
+                             vBroadcast2(outNodeGradientId, dimensionSizeNode));
 
             result[inode0] = add(result[inode0], grad0);
 

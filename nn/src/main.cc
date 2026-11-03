@@ -34,7 +34,7 @@ int main() {
     auto lossGradientMap = graph.mapGradientNodes(loss);
 
     // TODO: Fix gradient calc here
-    auto inputGradient = lossGradientMap[output];
+    auto inputGradient = lossGradientMap[input];
 
     std::vector<gork::Tensor<float>> inputs{
         {2, kBatchSize}, // input
@@ -44,6 +44,10 @@ int main() {
         {2, 2},          // weights2
         {2, 1},          // bias2
     };
+
+    for (auto &tensor : inputs) {
+        tensor.fill(0.0);
+    }
 
     gork::CpuGraphExecutor<float> executor{};
     executor.loggingEnabled_ = true;
