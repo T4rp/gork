@@ -7,6 +7,7 @@
 #include <initializer_list>
 #include <iostream>
 #include <ostream>
+#include <random>
 #include <utility>
 #include <vector>
 
@@ -39,6 +40,7 @@ class Tensor {
     T at(std::initializer_list<size_t> index) const;
     T &at(std::initializer_list<size_t> index);
     void fill(T);
+    void fillRand(std::mt19937 &);
 
     template <typename U>
     friend std::ostream &operator<<(std::ostream &, const Tensor<U> &);
@@ -219,6 +221,14 @@ template <typename T>
 void Tensor<T>::fill(T value) {
     for (size_t i = 0; i < size_; i++) {
         data_[i] = value;
+    }
+}
+
+template <typename T>
+void Tensor<T>::fillRand(std::mt19937 &randGen) {
+    std::uniform_real_distribution<> distrib(-1.0, 1.0);
+    for (size_t i = 0; i < size_; i++) {
+        data_[i] = distrib(randGen);
     }
 }
 
